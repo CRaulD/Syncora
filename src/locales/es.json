@@ -262,6 +262,14 @@
       ],
       "accept": "He leído y acepto los términos anteriores"
     },
+    "repair": {
+      "title": "Instalación parcial detectada",
+      "subtitle": "Syncora está registrado en el sistema, pero no se encontró la carpeta de instalación. Esto puede ocurrir si el antivirus movió los archivos o si la carpeta fue eliminada.",
+      "detectedPath": "Ruta registrada",
+      "hint": "Reparar recreará los archivos en la misma ruta y descargará las dependencias de nuevo. Instalación nueva empezará desde cero.",
+      "repairButton": "Reparar",
+      "freshButton": "Instalación nueva"
+    },
     "sidebar": {
       "tagline": "Subtítulos sin fricción",
       "description": "Instala Syncora, prepara las dependencias esenciales y puede añadir acciones rápidas al menú del Explorador."

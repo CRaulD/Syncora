@@ -126,6 +126,16 @@ pub fn is_installed(app: &AppHandle) -> bool {
         .map(|d| d.join(".installed"))
     {
         if key.is_file() {
+            #[cfg(target_os = "windows")]
+            {
+                if let Some(path) = read_install_path_from_registry() {
+                    if path.exists() {
+                        return true;
+                    }
+                    return false;
+                }
+            }
+            #[cfg(not(target_os = "windows"))]
             return true;
         }
     }
@@ -136,8 +146,10 @@ pub fn is_installed(app: &AppHandle) -> bool {
         use winreg::RegKey;
         let hkcu = RegKey::predef(HKEY_CURRENT_USER);
         if let Ok(sub) = hkcu.open_subkey(REG_HKCU_BASE) {
-            if sub.get_value::<String, _>(REG_INSTALL_PATH).is_ok() {
-                return true;
+            if let Ok(p) = sub.get_value::<String, _>(REG_INSTALL_PATH) {
+                if std::path::Path::new(&p).exists() {
+                    return true;
+                }
             }
         }
     }
@@ -784,6 +796,35 @@ pub async fn launch_main_app(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn get_default_install_path() -> String {
     default_install_path().to_string_lossy().to_string()
+}
+
+#[derive(serde::Serialize, Clone, Debug)]
+#[serde(tag = "state", rename_all = "lowercase")]
+pub enum InstallState {
+    Fresh,
+    Partial { path: String },
+    Complete,
+}
+
+#[tauri::command]
+pub fn get_install_state() -> InstallState {
+    #[cfg(target_os = "windows")]
+    {
+        use winreg::enums::HKEY_CURRENT_USER;
+        use winreg::RegKey;
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let path = hkcu
+            .open_subkey(REG_HKCU_BASE)
+            .ok()
+            .and_then(|k| k.get_value::<String, _>(REG_INSTALL_PATH).ok());
+        if let Some(p) = path {
+            if std::path::Path::new(&p).exists() {
+                return InstallState::Complete;
+            }
+            return InstallState::Partial { path: p };
+        }
+    }
+    InstallState::Fresh
 }
 
 fn validate_install_path_inner(path: &Path) -> Result<(), String> {

@@ -262,6 +262,14 @@
       ],
       "accept": "Li e concordo com os termos acima"
     },
+    "repair": {
+      "title": "Instalação incompleta detectada",
+      "subtitle": "O Syncora está registrado no sistema, mas a pasta de instalação não foi encontrada. Isso pode acontecer se o antivírus moveu os arquivos ou se a pasta foi deletada.",
+      "detectedPath": "Caminho registrado",
+      "hint": "A opção Reparar vai recriar os arquivos no mesmo caminho e baixar as dependências novamente. A opção Instalação nova vai começar do zero.",
+      "repairButton": "Reparar",
+      "freshButton": "Instalação nova"
+    },
     "sidebar": {
       "tagline": "Legendas sem atrito",
       "description": "Instala o Syncora, prepara dependências essenciais e pode adicionar ações rápidas no menu do Explorer."

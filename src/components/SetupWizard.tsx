@@ -4,13 +4,18 @@ import i18n from "../i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
-type Step = "terms" | "prepare" | "install" | "finish";
+type Step = "repair" | "terms" | "prepare" | "install" | "finish";
 
 interface InstallOptions {
   installDeps: boolean;
   installExplorer: boolean;
   installPath: string;
 }
+
+type InstallStateInfo =
+  | { state: "fresh" }
+  | { state: "partial"; path: string }
+  | { state: "complete" };
 
 interface InstallProgress {
   step: string;
@@ -31,6 +36,7 @@ export default function SetupWizard() {
   const { t, i18n } = useTranslation();
   const [step, setStep] = useState<Step>("terms");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [partialPath, setPartialPath] = useState<string | null>(null);
   const [opts, setOpts] = useState<InstallOptions>({
     installDeps: true,
     installExplorer: true,
@@ -50,12 +56,19 @@ export default function SetupWizard() {
     let cancelled = false;
     void (async () => {
       try {
+        const installState = await invoke<InstallStateInfo>("get_install_state");
+        if (cancelled) return;
+        if (installState.state === "partial") {
+          setPartialPath(installState.path);
+          setStep("repair");
+          return;
+        }
         const path = await invoke<string>("get_default_install_path");
         if (!cancelled) {
           setOpts((o) => (o.installPath ? o : { ...o, installPath: path }));
         }
       } catch (err) {
-        console.error("Falha ao obter caminho padrao:", err);
+        console.error("Falha ao obter estado de instalacao:", err);
       }
     })();
     return () => {
@@ -111,6 +124,20 @@ export default function SetupWizard() {
     }
   }
 
+  async function startRepair() {
+    if (!partialPath) return;
+    setOpts({ installDeps: true, installExplorer: true, installPath: partialPath });
+    setStep("install");
+    setProgress({ step: t("installer.steps.starting"), step_key: null, pct: 0, done: false, error: null, detail: null });
+    try {
+      await invoke("start_install", {
+        opts: { installDeps: true, installExplorer: true, installPath: partialPath },
+      });
+    } catch (e: unknown) {
+      setProgress((p) => ({ ...p, error: String(e), done: true }));
+    }
+  }
+
   async function launchApp() {
     try {
       await invoke("launch_main_app");
@@ -133,6 +160,14 @@ export default function SetupWizard() {
     <div className="setup-root">
       <Sidebar current={step} steps={steps} t={t} />
       <main className="setup-main">
+        {step === "repair" && (
+          <RepairPage
+            path={partialPath ?? ""}
+            onRepair={startRepair}
+            onFresh={() => setStep("terms")}
+            t={t}
+          />
+        )}
         {step === "terms" && (
           <TermsPage
             accepted={termsAccepted}
@@ -565,5 +600,38 @@ function SpinnerIcon() {
         strokeLinecap="round"
       />
     </svg>
+  );
+}
+
+interface RepairPageProps {
+  path: string;
+  onRepair: () => void;
+  onFresh: () => void;
+  t: (key: string) => string;
+}
+
+function RepairPage({ path, onRepair, onFresh, t }: RepairPageProps) {
+  return (
+    <div className="page">
+      <div className="page-header">
+        <h1 className="page-title">{t("installer.repair.title")}</h1>
+        <p className="page-subtitle">{t("installer.repair.subtitle")}</p>
+      </div>
+
+      <div className="repair-card">
+        <div className="repair-card-label">{t("installer.repair.detectedPath")}</div>
+        <div className="repair-card-path">{path}</div>
+        <div className="repair-card-hint">{t("installer.repair.hint")}</div>
+      </div>
+
+      <div className="repair-actions">
+        <button className="primary-btn" onClick={onRepair} type="button">
+          {t("installer.repair.repairButton")}
+        </button>
+        <button className="secondary-btn" onClick={onFresh} type="button">
+          {t("installer.repair.freshButton")}
+        </button>
+      </div>
+    </div>
   );
 }

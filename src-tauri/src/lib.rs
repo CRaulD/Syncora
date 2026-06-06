@@ -1022,6 +1022,7 @@ pub fn run() {
             setup_installer::start_install,
             setup_installer::launch_main_app,
             setup_installer::get_default_install_path,
+            setup_installer::get_install_state,
             setup_installer::validate_install_path,
             check_for_update
         ])

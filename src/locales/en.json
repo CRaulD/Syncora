@@ -262,6 +262,14 @@
       ],
       "accept": "I have read and agree to the terms above"
     },
+    "repair": {
+      "title": "Partial installation detected",
+      "subtitle": "Syncora is registered in the system, but the install folder was not found. This can happen if your antivirus moved the files or if the folder was deleted.",
+      "detectedPath": "Registered path",
+      "hint": "Repair will recreate the files at the same path and download the dependencies again. Fresh install will start over from scratch.",
+      "repairButton": "Repair",
+      "freshButton": "Fresh install"
+    },
     "sidebar": {
       "tagline": "Subtitles without friction",
       "description": "Installs Syncora, prepares the essential dependencies and can add quick actions to the Explorer menu."

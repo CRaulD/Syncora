@@ -681,3 +681,47 @@ body,
   background: #2a2a2a;
   border-radius: 99px;
 }
+
+/* Repair page */
+.repair-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 18px 20px;
+  margin: 20px 0;
+}
+
+.repair-card-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #999;
+  margin-bottom: 6px;
+}
+
+.repair-card-path {
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 13px;
+  color: var(--amber);
+  word-break: break-all;
+  padding: 6px 0;
+}
+
+.repair-card-hint {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #bbb;
+  margin-top: 8px;
+}
+
+.repair-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.repair-actions .primary-btn,
+.repair-actions .secondary-btn {
+  width: 100%;
+}
