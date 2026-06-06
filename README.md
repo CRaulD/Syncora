@@ -5,9 +5,9 @@
 <h1 align="center">Syncora</h1>
 
 <p align="center">
-  App desktop para encontrar, baixar e sincronizar legendas de arquivos de vídeo.
+  Desktop app to find, download, and sync subtitles for video files.
   <br />
-  Tauri + React + FastAPI, com instalador nativo para Windows.
+  Built with Tauri + React + FastAPI, ships a native Windows installer.
 </p>
 
 <p align="center">
@@ -17,62 +17,66 @@
   <a href="https://github.com/CRaulD/Syncora/releases"><img src="https://img.shields.io/badge/download-Windows%20Installer-success.svg" alt="Download" /></a>
 </p>
 
+<p align="center">
+  <strong>🌐 Language:</strong> <strong>English</strong> · <a href="README.pt-BR.md">Português (BR)</a>
+</p>
+
 ---
 
-## Visão geral
+## Overview
 
-Syncora escaneia uma pasta (ou arquivos enviados pelo Explorer), busca legendas em provedores configurados, baixa e sincroniza com o vídeo usando **ALASS**. Opcionalmente, embute softsubs no arquivo final com **FFmpeg**/**FFprobe**.
+Syncora scans a folder (or files opened from Explorer), looks up subtitles from configured providers, downloads them, and syncs them to the video using **ALASS**. It can optionally mux softsubs into the final file with **FFmpeg**/**FFprobe**.
 
-![Tela principal](docs/screenshots/tela-principal.png)
+![Main window](docs/screenshots/tela-principal.png)
 
-## Recursos
+## Features
 
-- Busca online em provedores: **SubDL**, **OpenSubtitles** e **SubSource**.
-- Sincronização automática de legenda com o vídeo (ALASS).
-- Embutir softsubs no contêiner de saída (FFmpeg/FFprobe).
-- Fila de processamento com status, retentativas e progresso geral.
-- **Instalador único** (`syncora.exe`): o mesmo binário é o assistente de instalação e o app. Detecta primeira execução vs. já instalado via arquivo `.installed` e chave de registro.
-- **Verificação automática de atualizações** via GitHub Releases, com cache de 24h e toast não-bloqueante quando há nova versão.
-- Integração com o menu de contexto do Explorer:
-  - **Abrir com Syncora**
-  - **Baixar legendas**
-  - **Baixar legendas e sincronizar**
+- Online search across providers: **SubDL**, **OpenSubtitles**, and **SubSource**.
+- Automatic subtitle-to-video sync (ALASS).
+- Mux softsubs into the output container (FFmpeg/FFprobe).
+- Processing queue with status, retries, and overall progress.
+- **Single installer binary** (`syncora.exe`): the same file is the setup wizard and the app. It detects first-run vs. already-installed state via an `.installed` marker and a registry key.
+- **Automatic update check** via GitHub Releases, with a 24h cache and a non-blocking toast when a new version is out.
+- Explorer context menu integration:
+  - **Open with Syncora**
+  - **Download subtitles**
+  - **Download subtitles and sync**
 
-![Opções](docs/screenshots/opcoes.png)
+![Options](docs/screenshots/opcoes.png)
 
-![Provedores de legenda](docs/screenshots/provedores.png)
+![Subtitle providers](docs/screenshots/provedores.png)
 
-![Menu de contexto do Explorer](docs/screenshots/menu-explorer.png)
+![Explorer context menu](docs/screenshots/menu-explorer.png)
 
-## Instalação (usuário final)
+## Installation (end user)
 
-Baixe o `syncora.exe` da [página de releases](https://github.com/CRaulD/Syncora/releases) e execute. O assistente de instalação (4 passos) cuida de:
+Download `syncora.exe` from the [releases page](https://github.com/CRaulD/Syncora/releases) and run it. The 4-step setup wizard handles:
 
-1. **Termos de Uso** — aceite obrigatório para prosseguir.
-2. **Preparar** — escolha o destino da instalação (padrão: `%LOCALAPPDATA%\Programs\Syncora`) e as opções (dependências, menu do Explorer).
-3. **Instalar** — barra de progresso com etapa atual e percentual.
-4. **Concluir** — abre o app.
+1. **Terms of Use** — acceptance is required to continue.
+2. **Prepare** — pick the install destination (default: `%LOCALAPPDATA%\Programs\Syncora`) and options (dependencies, Explorer menu).
+3. **Install** — progress bar with current step and percentage.
+4. **Finish** — launches the app.
 
-A instalação é **por usuário** (HKCU + `%LOCALAPPDATA%`), sem prompt de UAC. Para desinstalar, use "Desinstalar o Syncora" no Menu Iniciar, ou Aplicativos instalados do Windows.
+Installation is **per-user** (HKCU + `%LOCALAPPDATA%`) — no UAC prompt. To uninstall, use "Uninstall Syncora" from the Start Menu, or Windows "Installed apps".
 
-## Requisitos para desenvolvimento
+## Development requirements
 
-| Ferramenta | Versão | Uso |
+| Tool | Version | Purpose |
 |---|---|---|
-| Node.js | 18+ | Build do frontend (Vite + React + TypeScript) |
-| Rust | 1.77+ | Build do Tauri e do helper do Explorer |
-| Python | 3.10+ | Empacotamento do backend (FastAPI) via PyInstaller |
+| Node.js | 18+ | Frontend build (Vite + React + TypeScript) |
+| Rust | 1.77+ | Tauri build and Explorer helper |
+| Python | 3.10+ | Backend packaging (FastAPI) via PyInstaller |
 
-## Desenvolvimento
+## Development
 
 ```powershell
 npm install
 npm run tauri:dev
 ```
 
-O app sobe a interface React e inicia o backend Python automaticamente na porta `8765`.
+The app boots the React UI and starts the Python backend automatically on port `8765`.
 
-Para rodar só o backend manualmente:
+To run the backend manually:
 
 ```powershell
 cd backend
@@ -82,68 +86,68 @@ py -m uvicorn server:app --host 127.0.0.1 --port 8765 --reload
 
 ## Build
 
-Build do instalador único (`syncora.exe` com frontend e backend embarcados, sem instalador NSIS/MSI):
+Build the single-binary installer (`syncora.exe` with the frontend and backend embedded, no NSIS/MSI installer):
 
 ```powershell
 npm run build:syncora
 ```
 
-Saída: `src-tauri\target\release\syncora.exe` (~12 MB).
+Output: `src-tauri\target\release\syncora.exe` (~12 MB).
 
-> O comando `tauri build --no-bundle` é usado para gerar o `.exe` único. Para gerar instaladores tradicionais (`.msi` / `.exe` NSIS), use `npm run tauri:build`.
+> The `tauri build --no-bundle` command is used to produce the single `.exe`. To generate traditional installers (`.msi` / NSIS `.exe`), use `npm run tauri:build`.
 
-### Backend empacotado
+### Bundled backend
 
-O backend Python é empacotado com PyInstaller em `backend\dist\syncora-backend.exe` (~50 MB) e embutido como recurso do Tauri. O build completo (`build:syncora`) cuida de tudo automaticamente.
+The Python backend is packaged with PyInstaller into `backend\dist\syncora-backend.exe` (~50 MB) and embedded as a Tauri resource. The full build (`build:syncora`) handles everything automatically.
 
-## Provedores de legenda
+## Subtitle providers
 
-Os provedores são configurados na aba **Configuração** do app. Cada um pode exigir uma **API key** (e opcionalmente usuário e senha) e tem limites próprios de uso:
+Providers are configured in the **Settings** tab of the app. Each one may require an **API key** (and optionally a username and password) and has its own usage limits:
 
-- **SubDL** — API key obrigatória.
-- **OpenSubtitles** — API key obrigatória; usuário e senha opcionais para validar conta e limites.
+- **SubDL** — API key required.
+- **OpenSubtitles** — API key required; username and password optional for account validation and higher limits.
 - **SubSource** — API key.
 
-> As chaves são salvas localmente no app e nunca são enviadas a nenhum servidor além do provedor correspondente.
+> Keys are stored locally on your machine and are never sent to any server other than the corresponding provider.
 
-## Dados locais
+## Local data
 
-Chaves de provedores, dependências baixadas (ALASS, FFmpeg, FFprobe) e estado do app ficam fora do repositório, em:
+Provider keys, downloaded dependencies (ALASS, FFmpeg, FFprobe), and app state are kept out of the repo, in:
 
 ```text
 %LOCALAPPDATA%\Syncora\runtime
-%LOCALAPPDATA%\app.syncora.desktop\         # Tauri local data (cache do update checker, .installed, logs)
-%APPDATA%\Syncora\                          # registry HKCU\Software\Syncora e HKCU\...\Uninstall\Syncora
+%LOCALAPPDATA%\app.syncora.desktop\         # Tauri local data (update checker cache, .installed, logs)
+%APPDATA%\Syncora\                          # HKCU\Software\Syncora and HKCU\...\Uninstall\Syncora
 ```
 
-## Atualizações
+## Updates
 
-O app consulta a API do GitHub Releases (`api.github.com/repos/CRaulD/Syncora/releases/latest`) ao iniciar (1.5s após carregar) e exibe um toast amber no canto inferior direito quando uma nova versão está disponível. O cache de 24h evita bater no rate limit do GitHub (60 req/hora para chamadas não autenticadas). É possível forçar uma nova checagem em **Configuração → Atualizações → Verificar agora**.
+The app queries the GitHub Releases API (`api.github.com/repos/CRaulD/Syncora/releases/latest`) on startup (1.5s after load) and shows an amber toast in the bottom-right corner when a new version is available. The 24h cache avoids hitting GitHub's rate limit (60 req/hour for unauthenticated calls). You can force a fresh check in **Settings → Updates → Check now**.
 
-Para que o update check funcione corretamente, o repositório precisa ter pelo menos uma release publicada (a `v0.1.0-beta` no caso desta versão).
+For the update check to work correctly, the repository must have at least one published release (e.g. `v0.1.0-beta` for this version).
 
-## Estrutura do projeto
+## Project layout
 
 ```
 .
-├── src/                  # Frontend React + Vite + TypeScript
-│   ├── components/       # Componentes reutilizáveis (SetupWizard, etc.)
-│   ├── locales/          # Traduções i18n (pt-BR, en, es)
-│   └── styles/           # CSS (App + instalador)
-├── src-tauri/            # App Tauri (Rust)
-│   ├── src/              # lib.rs (app), setup_installer.rs (instalador)
-│   ├── icons/            # Ícones do app
-│   └── capabilities/     # Permissões do Tauri
-├── backend/              # Backend Python (FastAPI) + empacotamento PyInstaller
-├── scripts/              # Scripts PowerShell (build, contexto do Explorer)
-└── docs/                 # Documentação legal, screenshots, plano
+├── src/                  # React + Vite + TypeScript frontend
+│   ├── components/       # Reusable components (SetupWizard, etc.)
+│   ├── locales/          # i18n translations (pt-BR, en, es)
+│   └── styles/           # CSS (App + installer)
+├── src-tauri/            # Tauri app (Rust)
+│   ├── src/              # lib.rs (app), setup_installer.rs (installer)
+│   ├── icons/            # App icons
+│   └── capabilities/     # Tauri permissions
+├── backend/              # Python backend (FastAPI) + PyInstaller packaging
+├── scripts/              # PowerShell scripts (build, Explorer context)
+└── docs/                 # Legal docs, screenshots, plans
 ```
 
-## Licença
+## License
 
-MIT — veja [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
 
-## Documentos legais
+## Legal documents
 
-- **Termos de Uso** — [pt-BR](docs/terms/pt-BR.md) · [en](docs/terms/en.md) · [es](docs/terms/es.md)
-- **Política de Privacidade** — [pt-BR](docs/privacy/pt-BR.md) · [en](docs/privacy/en.md) · [es](docs/privacy/es.md)
+- **Terms of Use** — [en](docs/terms/en.md) · [pt-BR](docs/terms/pt-BR.md) · [es](docs/terms/es.md)
+- **Privacy Policy** — [en](docs/privacy/en.md) · [pt-BR](docs/privacy/pt-BR.md) · [es](docs/privacy/es.md)
