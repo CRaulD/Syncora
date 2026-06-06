@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
-  <img src="https://img.shields.io/badge/version-0.1.0--beta-orange.svg" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.1.1--beta-orange.svg" alt="Version" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4.svg" alt="Platform" />
   <a href="https://github.com/CRaulD/Syncora/releases"><img src="https://img.shields.io/badge/download-Windows%20Installer-success.svg" alt="Download" /></a>
 </p>
@@ -124,7 +124,7 @@ Chaves de provedores, dependências baixadas (ALASS, FFmpeg, FFprobe) e estado d
 
 O app consulta a API do GitHub Releases (`api.github.com/repos/CRaulD/Syncora/releases/latest`) ao iniciar (1.5s após carregar) e exibe um toast amber no canto inferior direito quando uma nova versão está disponível. O cache de 24h evita bater no rate limit do GitHub (60 req/hora para chamadas não autenticadas). É possível forçar uma nova checagem em **Configuração → Atualizações → Verificar agora**.
 
-Para que o update check funcione corretamente, o repositório precisa ter pelo menos uma release publicada (a `v0.1.0-beta` no caso desta versão).
+Para que o update check funcione corretamente, o repositório precisa ter pelo menos uma release publicada (a `v0.1.1-beta` no caso desta versão).
 
 ## Estrutura do projeto
 
