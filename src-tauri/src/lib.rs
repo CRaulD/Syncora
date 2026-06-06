@@ -133,51 +133,6 @@ fn find_backend_exe(app: &tauri::App) -> Option<PathBuf> {
         .find(|path| path.is_file())
 }
 
-fn looks_like_project_root(path: &Path) -> bool {
-    path.join("scripts")
-        .join("install-context-menu.ps1")
-        .is_file()
-        && path
-            .join("scripts")
-            .join("uninstall-context-menu.ps1")
-            .is_file()
-}
-
-fn project_root_candidates(app_handle: &tauri::AppHandle) -> Vec<PathBuf> {
-    let mut candidates = Vec::new();
-
-    if let Ok(project_root) = env::var("SYNCORA_PROJECT_ROOT") {
-        candidates.push(PathBuf::from(project_root));
-    }
-
-    if let Ok(cwd) = env::current_dir() {
-        candidates.push(cwd.clone());
-        candidates.push(cwd.join(".."));
-        candidates.push(cwd.join("..").join(".."));
-    }
-
-    if let Ok(exe) = env::current_exe() {
-        if let Some(exe_dir) = exe.parent() {
-            candidates.push(exe_dir.to_path_buf());
-            candidates.push(exe_dir.join(".."));
-            candidates.push(exe_dir.join("..").join(".."));
-            candidates.push(exe_dir.join("..").join("..").join(".."));
-        }
-    }
-
-    if let Ok(resource_dir) = app_handle.path().resource_dir() {
-        candidates.push(resource_dir);
-    }
-
-    candidates
-}
-
-fn find_project_root(app_handle: &tauri::AppHandle) -> Option<PathBuf> {
-    project_root_candidates(app_handle)
-        .into_iter()
-        .find(|path| looks_like_project_root(path))
-}
-
 fn build_backend_command(python_exe: &str, backend_dir: &Path) -> Command {
     let mut cmd = Command::new(python_exe);
     cmd.arg("-m")
@@ -434,32 +389,240 @@ fn explorer_send_to_dir() -> PathBuf {
         .join("SendTo")
 }
 
+#[derive(Clone, Copy)]
+struct ExplorerAction {
+    id: &'static str,
+    label: &'static str,
+    action: &'static str,
+    wrapper: &'static str,
+    send_to: &'static str,
+}
+
+const EXPLORER_ACTIONS: &[ExplorerAction] = &[
+    ExplorerAction {
+        id: "Syncora.OpenQueue",
+        label: "Abrir com Syncora",
+        action: "queue",
+        wrapper: "Syncora.OpenQueue.cmd",
+        send_to: "Syncora - abrir na fila.cmd",
+    },
+    ExplorerAction {
+        id: "Syncora.DownloadSubtitles",
+        label: "Baixar legendas",
+        action: "download",
+        wrapper: "Syncora.DownloadSubtitles.cmd",
+        send_to: "Syncora - baixar legendas.cmd",
+    },
+    ExplorerAction {
+        id: "Syncora.DownloadAndSync",
+        label: "Baixar legendas e sincronizar",
+        action: "download-sync",
+        wrapper: "Syncora.DownloadAndSync.cmd",
+        send_to: "Syncora - baixar e sincronizar.cmd",
+    },
+];
+
+fn current_app_exe() -> Result<PathBuf, String> {
+    env::current_exe().map_err(|err| format!("Nao encontrei o executavel do Syncora: {err}"))
+}
+
+fn current_helper_exe(app_exe: &Path) -> Result<PathBuf, String> {
+    let app_dir = app_exe
+        .parent()
+        .ok_or_else(|| "Nao encontrei a pasta do executavel do Syncora.".to_string())?;
+    let helper = app_dir.join("syncora-open.exe");
+    if helper.is_file() {
+        return Ok(helper);
+    }
+
+    if let Ok(project_root) = env::var("SYNCORA_PROJECT_ROOT") {
+        for profile in ["debug", "release"] {
+            let candidate = PathBuf::from(&project_root)
+                .join("src-tauri")
+                .join("target")
+                .join(profile)
+                .join("syncora-open.exe");
+            if candidate.is_file() {
+                return Ok(candidate);
+            }
+        }
+    }
+
+    Err(format!(
+        "syncora-open.exe nao encontrado ao lado do app: {}",
+        helper.display()
+    ))
+}
+
+fn quoted_path(path: &Path) -> String {
+    format!("\"{}\"", path.to_string_lossy())
+}
+
+fn explorer_wrapper_content(action: ExplorerAction, app_exe: &Path, helper_exe: &Path) -> String {
+    format!(
+        "@echo off\r\nset \"SYNCORA_ACTION={}\"\r\nset \"SYNCORA_APP_EXE={}\"\r\n{} --syncora-action {} %*\r\n",
+        action.action,
+        app_exe.to_string_lossy(),
+        quoted_path(helper_exe),
+        action.action
+    )
+}
+
+fn reg_add(key: &str, name: Option<&str>, value: &str) -> Result<(), String> {
+    let mut command = Command::new("reg");
+    command.arg("add").arg(key);
+    if let Some(name) = name {
+        command.arg("/v").arg(name);
+    } else {
+        command.arg("/ve");
+    }
+    command.arg("/t").arg("REG_SZ").arg("/d").arg(value).arg("/f");
+
+    #[cfg(target_os = "windows")]
+    {
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let output = command
+        .output()
+        .map_err(|err| format!("Falha ao executar reg.exe: {err}"))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        Err(if stderr.is_empty() { stdout } else { stderr })
+    }
+}
+
+fn reg_delete(key: &str) {
+    let mut command = Command::new("reg");
+    command.arg("delete").arg(key).arg("/f");
+    #[cfg(target_os = "windows")]
+    {
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    let _ = command.output();
+}
+
+fn register_explorer_verb(
+    ext: &str,
+    action: ExplorerAction,
+    app_exe: &Path,
+    wrapper_path: &Path,
+) -> Result<(), String> {
+    let base = format!(
+        r"HKCU\Software\Classes\SystemFileAssociations\{}\shell\{}",
+        ext, action.id
+    );
+    reg_add(&base, None, action.label)?;
+    reg_add(&base, Some("MUIVerb"), action.label)?;
+    reg_add(&base, Some("Icon"), &app_exe.to_string_lossy())?;
+    reg_add(&base, Some("MultiSelectModel"), "Player")?;
+    reg_add(&base, Some("Position"), "Top")?;
+    reg_add(
+        &format!(r"{}\command", base),
+        None,
+        &format!("\"{}\" \"%1\"", wrapper_path.to_string_lossy()),
+    )?;
+    Ok(())
+}
+
+fn install_explorer_integration_native() -> Result<(), String> {
+    let app_exe = current_app_exe()?;
+    let helper_exe = current_helper_exe(&app_exe)?;
+    let wrapper_dir = explorer_wrapper_dir();
+    let send_to_dir = explorer_send_to_dir();
+
+    fs::create_dir_all(&wrapper_dir)
+        .map_err(|err| format!("Nao foi possivel criar a pasta da integracao: {err}"))?;
+    if !send_to_dir.as_os_str().is_empty() {
+        let _ = fs::create_dir_all(&send_to_dir);
+    }
+
+    for action in EXPLORER_ACTIONS {
+        let wrapper_path = wrapper_dir.join(action.wrapper);
+        let content = explorer_wrapper_content(*action, &app_exe, &helper_exe);
+        fs::write(&wrapper_path, &content)
+            .map_err(|err| format!("Nao foi possivel criar wrapper do Explorer: {err}"))?;
+
+        if !send_to_dir.as_os_str().is_empty() {
+            let _ = fs::write(send_to_dir.join(action.send_to), &content);
+        }
+
+        for ext in VIDEO_EXTS {
+            register_explorer_verb(&format!(".{}", ext), *action, &app_exe, &wrapper_path)?;
+        }
+    }
+
+    reg_add(
+        r"HKCU\Software\Syncora\ExplorerIntegration",
+        Some("HelperPath"),
+        &helper_exe.to_string_lossy(),
+    )?;
+    reg_add(
+        r"HKCU\Software\Syncora\ExplorerIntegration",
+        Some("IconPath"),
+        &app_exe.to_string_lossy(),
+    )?;
+    reg_add(
+        r"HKCU\Software\Syncora\ExplorerIntegration",
+        Some("WrapperDir"),
+        &wrapper_dir.to_string_lossy(),
+    )?;
+
+    Ok(())
+}
+
+fn uninstall_explorer_integration_native() {
+    for ext in VIDEO_EXTS {
+        for action in EXPLORER_ACTIONS {
+            reg_delete(&format!(
+                r"HKCU\Software\Classes\SystemFileAssociations\.{}\shell\{}",
+                ext, action.id
+            ));
+        }
+    }
+
+    let wrapper_dir = explorer_wrapper_dir();
+    for action in EXPLORER_ACTIONS {
+        let _ = fs::remove_file(wrapper_dir.join(action.wrapper));
+    }
+    let _ = fs::remove_dir(&wrapper_dir);
+
+    let send_to_dir = explorer_send_to_dir();
+    for action in EXPLORER_ACTIONS {
+        let _ = fs::remove_file(send_to_dir.join(action.send_to));
+        let _ = fs::remove_file(send_to_dir.join(action.send_to.replace(".cmd", ".lnk")));
+    }
+
+    reg_delete(r"HKCU\Software\Syncora\ExplorerIntegration");
+}
+
 fn explorer_integration_status() -> ExplorerIntegrationStatus {
     let wrapper_dir = explorer_wrapper_dir();
     let send_to_dir = explorer_send_to_dir();
-    let wrappers = [
-        "Syncora.OpenQueue.cmd",
-        "Syncora.DownloadSubtitles.cmd",
-        "Syncora.DownloadAndSync.cmd",
-    ];
-    let shortcuts = [
-        "Syncora - abrir na fila.lnk",
-        "Syncora - baixar legendas.lnk",
-        "Syncora - baixar e sincronizar.lnk",
-    ];
-
-    let wrappers_ok = wrappers.iter().all(|name| wrapper_dir.join(name).is_file());
-    let shortcuts_ok = shortcuts
+    let wrappers_ok = EXPLORER_ACTIONS
         .iter()
-        .all(|name| send_to_dir.join(name).is_file());
-    let helper_path = env::var("SYNCORA_APP_EXE").unwrap_or_default();
+        .all(|action| wrapper_dir.join(action.wrapper).is_file());
+    let shortcuts_ok = EXPLORER_ACTIONS.iter().all(|action| {
+        send_to_dir.join(action.send_to).is_file()
+            || send_to_dir
+                .join(action.send_to.replace(".cmd", ".lnk"))
+                .is_file()
+    });
+    let helper_path = current_app_exe()
+        .ok()
+        .and_then(|app_exe| current_helper_exe(&app_exe).ok())
+        .map(|path| path.to_string_lossy().to_string())
+        .unwrap_or_default();
     let installed = wrappers_ok && shortcuts_ok;
     let message = if installed {
-        "Integração instalada.".to_string()
+        "Integracao instalada.".to_string()
     } else if wrappers_ok || shortcuts_ok {
-        "Integração parcial. Reinstale para reparar.".to_string()
+        "Integracao parcial. Reinstale para reparar.".to_string()
     } else {
-        "Integração não instalada.".to_string()
+        "Integracao nao instalada.".to_string()
     };
 
     ExplorerIntegrationStatus {
@@ -471,48 +634,6 @@ fn explorer_integration_status() -> ExplorerIntegrationStatus {
     }
 }
 
-fn run_context_script(app_handle: &tauri::AppHandle, script_name: &str) -> Result<(), String> {
-    let project_root = find_project_root(app_handle)
-        .ok_or_else(|| "Não encontrei a pasta do projeto Syncora.".to_string())?;
-    let script = project_root.join("scripts").join(script_name);
-    if !script.is_file() {
-        return Err(format!("Script não encontrado: {}", script.display()));
-    }
-
-    let mut command = Command::new("powershell");
-    command
-        .arg("-NoProfile")
-        .arg("-ExecutionPolicy")
-        .arg("Bypass")
-        .arg("-File")
-        .arg(&script)
-        .current_dir(&project_root)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
-
-    #[cfg(target_os = "windows")]
-    {
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
-
-    let output = command
-        .output()
-        .map_err(|err| format!("Falha ao executar PowerShell: {err}"))?;
-    if output.status.success() {
-        return Ok(());
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-    let details = if stderr.is_empty() { stdout } else { stderr };
-    Err(if details.is_empty() {
-        format!("Script falhou com status {}", output.status)
-    } else {
-        details
-    })
-}
-
 #[tauri::command]
 fn get_explorer_integration_status() -> ExplorerIntegrationStatus {
     explorer_integration_status()
@@ -522,7 +643,8 @@ fn get_explorer_integration_status() -> ExplorerIntegrationStatus {
 fn install_explorer_integration(
     app_handle: tauri::AppHandle,
 ) -> Result<ExplorerIntegrationStatus, String> {
-    run_context_script(&app_handle, "install-context-menu.ps1")?;
+    let _ = app_handle;
+    install_explorer_integration_native()?;
     Ok(explorer_integration_status())
 }
 
@@ -530,7 +652,8 @@ fn install_explorer_integration(
 fn uninstall_explorer_integration(
     app_handle: tauri::AppHandle,
 ) -> Result<ExplorerIntegrationStatus, String> {
-    run_context_script(&app_handle, "uninstall-context-menu.ps1")?;
+    let _ = app_handle;
+    uninstall_explorer_integration_native();
     Ok(explorer_integration_status())
 }
 
