@@ -4,6 +4,16 @@ Todas as mudanças notáveis neste projeto são documentadas aqui. O formato seg
 
 > 🌐 **Idioma:** [English](CHANGELOG.md) · **Português (BR)**
 
+## [0.1.2-beta] - 2026-06-06
+
+### Corrigido
+- **Desinstalação agora sempre limpa o registro**, mesmo se a pasta de instalação sumiu. Antes, se a pasta de instalação era removida (ex.: por antivírus ou manualmente), as entradas em `HKCU\Software\Syncora` e `HKCU\...\Uninstall\Syncora` ficavam órfãs, fazendo o app aparecer como instalado em Configurações → Aplicativos sem como remover (o `UninstallString` apontava pra um `.exe` que não existia). `run_uninstall` agora sempre remove as chaves do registro, o marcador `.installed`, a pasta `runtime`, os atalhos da Área de Trabalho e Menu Iniciar, e a integração com o Explorer — só a remoção da pasta de instalação em si é condicional ao valor no registro.
+- **`is_installed()` agora verifica que a pasta de instalação realmente existe**. Antes, a função retornava `true` sempre que o registro tinha uma entrada `InstallPath`, mesmo se o caminho tivesse sumido — fazendo o app principal abrir com backend quebrado em vez do wizard. Agora o wizard abre com a opção Reparar quando a instalação está nesse estado parcial.
+
+### Adicionado
+- **Opção "Reparar instalação" no assistente**. Quando o registro tem um `InstallPath` mas a pasta sumiu, o wizard mostra uma tela dedicada com o caminho registrado e dois botões: **Reparar** (reinstalar no mesmo caminho, baixar todas as dependências de novo) e **Instalação nova** (seguir o fluxo normal de instalação do zero). A tela de Reparo é traduzida em pt-BR, en e es.
+- **Comando Tauri `get_install_state`** que retorna `fresh`, `partial { path }` ou `complete`, para o wizard detectar o estado parcial e oferecer a ação certa.
+
 ## [0.1.1-beta] - 2026-06-06
 
 ### Corrigido
