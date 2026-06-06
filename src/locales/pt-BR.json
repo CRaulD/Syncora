@@ -163,7 +163,10 @@
     "removingIntegration": "Removendo integração...",
     "installedChip": "Instalada",
     "offChip": "Off",
-    "installedMessage": "Integração instalada."
+    "installedMessage": "Integração instalada.",
+    "missingShortcutsMessage": "Faltam atalhos em Enviar Para. Reinstale para reparar.",
+    "missingWrappersMessage": "Faltam arquivos auxiliares do Explorer. Reinstale para reparar.",
+    "notInstalledMessage": "Integração não instalada."
   },
   "actions": {
     "cancel": "Cancelar",

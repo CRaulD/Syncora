@@ -786,7 +786,23 @@ pub async fn launch_main_app(app: AppHandle) -> Result<(), String> {
     if let Some(setup_win) = app.get_webview_window("setup") {
         let _ = setup_win.close();
     }
-    if let Some(main_win) = app.get_webview_window("main") {
+    if app.get_webview_window("main").is_none() {
+        tauri::WebviewWindowBuilder::new(
+            &app,
+            "main",
+            tauri::WebviewUrl::App("index.html".into()),
+        )
+        .title("Syncora")
+        .inner_size(800.0, 800.0)
+        .min_inner_size(800.0, 800.0)
+        .max_inner_size(800.0, 800.0)
+        .resizable(false)
+        .maximizable(false)
+        .decorations(true)
+        .build()
+        .map_err(|e| format!("Falha ao abrir Syncora: {e}"))?;
+        super::start_backend_if_needed(&app);
+    } else if let Some(main_win) = app.get_webview_window("main") {
         let _ = main_win.show();
         let _ = main_win.set_focus();
     }

@@ -58,7 +58,7 @@ fn looks_like_backend_dir(path: &Path) -> bool {
     path.join("server.py").is_file()
 }
 
-fn candidate_backend_dirs(app: &tauri::App) -> Vec<PathBuf> {
+fn candidate_backend_dirs<R: tauri::Runtime>(app: &impl tauri::Manager<R>) -> Vec<PathBuf> {
     let mut candidates: Vec<PathBuf> = Vec::new();
 
     if let Ok(project_root) = env::var("SYNCORA_PROJECT_ROOT") {
@@ -99,13 +99,13 @@ fn candidate_backend_dirs(app: &tauri::App) -> Vec<PathBuf> {
     candidates
 }
 
-fn find_backend_dir(app: &tauri::App) -> Option<PathBuf> {
+fn find_backend_dir<R: tauri::Runtime>(app: &impl tauri::Manager<R>) -> Option<PathBuf> {
     candidate_backend_dirs(app)
         .into_iter()
         .find(|path| looks_like_backend_dir(path))
 }
 
-fn candidate_backend_exes(app: &tauri::App) -> Vec<PathBuf> {
+fn candidate_backend_exes<R: tauri::Runtime>(app: &impl tauri::Manager<R>) -> Vec<PathBuf> {
     let mut candidates = Vec::new();
 
     if let Ok(resource_dir) = app.path().resource_dir() {
@@ -130,7 +130,7 @@ fn candidate_backend_exes(app: &tauri::App) -> Vec<PathBuf> {
     candidates
 }
 
-fn find_backend_exe(app: &tauri::App) -> Option<PathBuf> {
+fn find_backend_exe<R: tauri::Runtime>(app: &impl tauri::Manager<R>) -> Option<PathBuf> {
     candidate_backend_exes(app)
         .into_iter()
         .find(|path| path.is_file())
@@ -192,7 +192,46 @@ fn spawn_backend_python_process(backend_dir: &Path) -> Result<Child, String> {
     Err(format!("Nao foi possivel iniciar backend ({last_error})"))
 }
 
-fn start_backend_if_needed(app: &tauri::App) {
+fn create_main_window<R: tauri::Runtime>(app: &impl tauri::Manager<R>) -> tauri::Result<()> {
+    if app.get_webview_window("main").is_some() {
+        return Ok(());
+    }
+    tauri::WebviewWindowBuilder::new(
+        app,
+        "main",
+        tauri::WebviewUrl::App("index.html".into()),
+    )
+    .title("Syncora")
+    .inner_size(800.0, 800.0)
+    .min_inner_size(800.0, 800.0)
+    .max_inner_size(800.0, 800.0)
+    .resizable(false)
+    .maximizable(false)
+    .decorations(true)
+    .build()?;
+    Ok(())
+}
+
+fn create_setup_window<R: tauri::Runtime>(app: &impl tauri::Manager<R>) -> tauri::Result<()> {
+    if app.get_webview_window("setup").is_some() {
+        return Ok(());
+    }
+    tauri::WebviewWindowBuilder::new(
+        app,
+        "setup",
+        tauri::WebviewUrl::App("setup.html".into()),
+    )
+    .title("Instalador do Syncora")
+    .inner_size(760.0, 520.0)
+    .resizable(false)
+    .maximizable(false)
+    .decorations(true)
+    .center()
+    .build()?;
+    Ok(())
+}
+
+fn start_backend_if_needed<R: tauri::Runtime>(app: &impl tauri::Manager<R>) {
     if backend_is_reachable() {
         log::info!("Backend ja estava online em {}", BACKEND_ADDR);
         return;
@@ -617,7 +656,12 @@ fn install_explorer_integration_native() -> Result<(), String> {
 
         if !send_to_dir.as_os_str().is_empty() {
             let basename = send_to_basename(*action, &initial_lang);
-            let _ = fs::write(send_to_dir.join(format!("{basename}.cmd")), &content);
+            if let Err(err) = fs::write(send_to_dir.join(format!("{basename}.cmd")), &content) {
+                log::warn!(
+                    "Nao foi possivel criar atalho do SendTo {}: {err}",
+                    send_to_dir.join(format!("{basename}.cmd")).display()
+                );
+            }
         }
 
         let label = label_for_action(*action, &initial_lang);
@@ -759,13 +803,16 @@ fn explorer_integration_status() -> ExplorerIntegrationStatus {
         .map(|path| path.to_string_lossy().to_string())
         .unwrap_or_default();
     let installed = wrappers_ok && shortcuts_ok;
-    let message = if installed {
-        "Integracao instalada.".to_string()
-    } else if wrappers_ok || shortcuts_ok {
-        "Integracao parcial. Reinstale para reparar.".to_string()
+    let message_key = if installed {
+        "explorer.installedMessage"
+    } else if wrappers_ok && !shortcuts_ok {
+        "explorer.missingShortcutsMessage"
+    } else if !wrappers_ok && shortcuts_ok {
+        "explorer.missingWrappersMessage"
     } else {
-        "Integracao nao instalada.".to_string()
+        "explorer.notInstalledMessage"
     };
+    let message = localized_status_message(message_key);
 
     ExplorerIntegrationStatus {
         installed,
@@ -774,6 +821,23 @@ fn explorer_integration_status() -> ExplorerIntegrationStatus {
         send_to_dir: send_to_dir.to_string_lossy().to_string(),
         message,
     }
+}
+
+fn localized_status_message(key: &str) -> String {
+    let lang = env::var("SYNCORA_APP_LANG").unwrap_or_else(|_| "pt-BR".to_string());
+    let json = match lang.as_str() {
+        "en" => include_str!("../../src/locales/en.json"),
+        "es" => include_str!("../../src/locales/es.json"),
+        _ => include_str!("../../src/locales/pt-BR.json"),
+    };
+    if let Ok(value) = serde_json::from_str::<serde_json::Value>(json) {
+        if let Some(explorer) = value.get("explorer") {
+            if let Some(s) = explorer.get(key.trim_start_matches("explorer.")).and_then(|v| v.as_str()) {
+                return s.to_string();
+            }
+        }
+    }
+    key.to_string()
 }
 
 #[tauri::command]
@@ -979,33 +1043,10 @@ pub fn run() {
 
             let handle = app.handle().clone();
             if setup_installer::is_installed(&handle) {
-                tauri::WebviewWindowBuilder::new(
-                    app,
-                    "main",
-                    tauri::WebviewUrl::App("index.html".into()),
-                )
-                .title("Syncora")
-                .inner_size(800.0, 800.0)
-                .min_inner_size(800.0, 800.0)
-                .max_inner_size(800.0, 800.0)
-                .resizable(false)
-                .maximizable(false)
-                .decorations(true)
-                .build()?;
+                create_main_window(app)?;
                 start_backend_if_needed(app);
             } else {
-                tauri::WebviewWindowBuilder::new(
-                    app,
-                    "setup",
-                    tauri::WebviewUrl::App("setup.html".into()),
-                )
-                .title("Instalador do Syncora")
-                .inner_size(760.0, 520.0)
-                .resizable(false)
-                .maximizable(false)
-                .decorations(true)
-                .center()
-                .build()?;
+                create_setup_window(app)?;
             }
 
             Ok(())

@@ -163,7 +163,10 @@
     "removingIntegration": "Removing integration...",
     "installedChip": "Installed",
     "offChip": "Off",
-    "installedMessage": "Integration installed."
+    "installedMessage": "Integration installed.",
+    "missingShortcutsMessage": "Missing Send To shortcuts. Reinstall to repair.",
+    "missingWrappersMessage": "Missing Explorer helper files. Reinstall to repair.",
+    "notInstalledMessage": "Integration not installed."
   },
   "actions": {
     "cancel": "Cancel",
