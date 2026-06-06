@@ -1,0 +1,43 @@
+{
+  "name": "syncora",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:frontend",
+    "build:frontend": "tsc -b && vite build",
+    "build:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-backend.ps1",
+    "installer:assets": "node scripts/generate-nsis-assets.mjs",
+    "build:release": "npm run installer:assets && npm run build:backend && npm run build:frontend",
+    "inno:build": "npm run build:release && cargo build --manifest-path src-tauri/Cargo.toml --release && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-inno-installer.ps1",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "helper:build": "cargo build --manifest-path src-tauri/Cargo.toml --bin syncora-open",
+    "helper:build:release": "cargo build --manifest-path src-tauri/Cargo.toml --bin syncora-open --release",
+    "context:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-context-menu.ps1",
+    "context:uninstall": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/uninstall-context-menu.ps1"
+  },
+  "dependencies": {
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tauri-apps/cli": "^2.11.2",
+    "@types/node": "^24.12.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.12"
+  }
+}

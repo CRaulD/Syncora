@@ -1,0 +1,4 @@
+fastapi==0.115.0
+uvicorn==0.30.6
+subliminal==2.2.1
+babelfish==0.6.1
