@@ -1,0 +1,304 @@
+{
+  "app": {
+    "name": "Syncora",
+    "tagline": "Sincronize legendas sem complicação."
+  },
+  "tabs": {
+    "queue": "Fila",
+    "config": "Configuração"
+  },
+  "theme": {
+    "light": "Claro",
+    "dark": "Escuro"
+  },
+  "queue": {
+    "sourceDir": "Pasta origem (vídeos + legendas)",
+    "outputDir": "Pasta de saída",
+    "browse": "Procurar",
+    "scan": "Escanear",
+    "downloadAndSync": "Baixar e sincronizar",
+    "openOptions": "Abrir opções",
+    "closeOptions": "Fechar opções",
+    "options": "Opções",
+    "subfolders": "Subpastas",
+    "noSubfolders": "Sem subpastas",
+    "onlineSearch": "Busca online",
+    "noOnlineSearch": "Sem busca online",
+    "syncOn": "Sync on",
+    "downloadOnly": "Só download",
+    "softsubOn": "Softsub on",
+    "softsubOff": "Softsub off",
+    "timeoutLabel": "Timeout {{seconds}}s",
+    "scanning": "Escaneando...",
+    "queueTitle": "Fila de processamento",
+    "all": "Todos",
+    "ready": "Aguardando",
+    "ok": "OK",
+    "skipped": "Pulados",
+    "failed": "Falhas",
+    "emptyTitle": "Nenhum vídeo escaneado ainda",
+    "emptyHint": "Preencha as pastas acima e clique em Escanear para montar a fila.",
+    "tableVideo": "Vídeo",
+    "tableProgress": "Andamento",
+    "tableActions": "Ações",
+    "progressTitle": "Progresso geral",
+    "statusReady": "Pronto para escanear",
+    "queueCount": "{{count}} item(ns) na fila",
+    "timeRemainingZero": "Tempo restante: 0 min",
+    "behavior": "Comportamento",
+    "onlineSearchBehavior": "Busca online",
+    "forceSearch": "Forçar busca",
+    "syncAfterDownload": "Sincronizar após baixar",
+    "forceResync": "Forçar sincronização",
+    "output": "Saída",
+    "keepSubfolders": "Manter subpastas",
+    "embedSoftsub": "Embutir softsub",
+    "defaultSubtitle": "Legenda default",
+    "advanced": "Avançado",
+    "timeout": "Timeout",
+    "retries": "Retries",
+    "track": "Trilha",
+    "filterAria": "Filtros da fila",
+    "emptyFilterTitle": "Nenhum item neste filtro",
+    "emptyFilterHint": "Troque o filtro para ver os outros arquivos da fila.",
+    "reprocessFailed": "Reprocessar falhas",
+    "downloadOnlySubtitles": "Baixar legendas",
+    "total": "Total",
+    "completed": "Concluídos",
+    "showLog": "Mostrar log",
+    "hideLog": "Ocultar log"
+  },
+  "languages": {
+    "sectionTitle": "1. Idioma e fontes",
+    "subtitleLanguage": "Idioma da legenda",
+    "interfaceLanguage": "Idioma da interface"
+  },
+  "providers": {
+    "sectionTitle": "Provedores de legenda",
+    "subsectionTitle": "Provedores de legenda",
+    "noKey": "Sem chave",
+    "noApiKey": "Sem API key",
+    "savedKey": "Chave salva",
+    "savedKeyMasked": "Chave salva · {{masked}}",
+    "apiKeyLabel": "API key",
+    "apiKeyPlaceholder": "Cole a API key",
+    "apiKeySavedPlaceholder": "Chave salva ({{masked}})",
+    "apiKeyShow": "Mostrar API key",
+    "apiKeyHide": "Esconder API key",
+    "usernameOptional": "Usuário (opcional)",
+    "passwordOptional": "Senha (opcional)",
+    "usernamePlaceholder": "Seu usuário",
+    "usernameSavedPlaceholder": "Usuário salvo",
+    "passwordPlaceholder": "Cole a senha",
+    "passwordSavedPlaceholder": "Senha salva",
+    "apiKeyRequiredHint": "API key obrigatória. Usuário e senha são opcionais para validar sua conta e limites de download.",
+    "subliminalNote": "Usa Subliminal com OpenSubtitles e Podnapisi. Não precisa configurar API key.",
+    "priority": "Prioridade",
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "save": "Salvar",
+    "testing": "Testando...",
+    "test": "Testar conexão",
+    "remove": "Remover",
+    "add": "Adicionar",
+    "loading": "Carregando",
+    "disabled": "Desativado",
+    "failedChip": "Falhou",
+    "readyChip": "Pronto",
+    "limitChip": "Limite",
+    "connectedChip": "Conectado",
+    "subliminalLegacy": "OpenSubtitles + Podnapisi legado",
+    "connectionOkDownloadFailed": "Conexão OK, mas download falhou no último teste",
+    "dailyLimitReached": "Limite diário de downloads atingido",
+    "accountOk": "Conta OK",
+    "accountOkRemaining": "Conta OK · {{remaining}} restante(s)",
+    "apiKeyOkLoginNeeded": "API key OK · login necessário para baixar",
+    "apiKeyOk": "API key OK"
+  },
+  "tools": {
+    "sectionTitle": "Ferramentas",
+    "sectionTitleNumbered": "2. Ferramentas",
+    "depsStatus": "Status das dependências",
+    "depsHint": "As ferramentas ficam na pasta runtime do aplicativo. Use esta área para atualizar ou reparar.",
+    "updateDeps": "Atualizar dependências",
+    "updating": "Atualizando...",
+    "toolOk": "OK",
+    "toolOff": "OFF"
+  },
+  "setup": {
+    "title": "Preparar o Syncora",
+    "subtitle": "Instale o que falta para usar o app sem voltar na configuração depois.",
+    "depsLabel": "Dependências",
+    "downloadHint": "Baixa ALASS, FFmpeg e FFprobe para sincronizar e embutir legendas.",
+    "explorerHint": "Adiciona Abrir com Syncora, Baixar legendas e Baixar legendas e sincronizar.",
+    "depsMissing": "Dependências não encontradas",
+    "installDeps": "Instalar dependências",
+    "depsStatus": "Status das dependências",
+    "skipForNow": "Pular por agora",
+    "downloadingDeps": "Baixando dependências...",
+    "installingMenu": "Instalando menu...",
+    "installAll": "Instalar tudo",
+    "downloadDeps": "Baixar dependências",
+    "installExplorerMenu": "Instalar menu do Explorer",
+    "enterSyncora": "Entrar no Syncora",
+    "chipChecking": "Verificando",
+    "chipInstalled": "Instalado",
+    "chipRequired": "Necessário",
+    "chipSelected": "Selecionado",
+    "chipOptional": "Opcional"
+  },
+  "explorer": {
+    "sectionTitle": "Integração com o Explorer",
+    "menuTitle": "Menu do Explorer",
+    "windowsIntegrationNumbered": "3. Integração do Windows",
+    "subtitle": "Adiciona ações no menu de contexto do Windows para arquivos de vídeo.",
+    "install": "Instalar",
+    "installing": "Instalando...",
+    "installIntegration": "Instalar integração",
+    "installingIntegration": "Instalando integração...",
+    "update": "Atualizar",
+    "updateIntegration": "Atualizar integração",
+    "uninstall": "Remover",
+    "uninstalling": "Removendo...",
+    "removingIntegration": "Removendo integração...",
+    "installedChip": "Instalada",
+    "offChip": "Off",
+    "installedMessage": "Integração instalada."
+  },
+  "actions": {
+    "cancel": "Cancelar",
+    "cancelling": "Cancelando...",
+    "back": "Voltar",
+    "next": "Próximo",
+    "install": "Instalar",
+    "finish": "Concluir",
+    "close": "Fechar",
+    "open": "Abrir",
+    "save": "Salvar",
+    "search": "Buscar",
+    "retry": "Tentar novamente"
+  },
+  "status": {
+    "phaseReady": "Pronto para escanear",
+    "phaseScanning": "Escaneando...",
+    "phaseSyncing": "Sincronizando...",
+    "phaseDone": "Concluído",
+    "phasePaused": "Pausado"
+  },
+  "toast": {
+    "scanComplete": "Escaneamento concluído",
+    "downloadStarted": "Download iniciado",
+    "downloadComplete": "Download concluído",
+    "backendOffline": "Backend offline. Inicie o servidor local na porta 8765.",
+    "noSubtitleFound": "Nenhuma legenda encontrada para este arquivo no idioma escolhido.",
+    "backendOfflineShort": "Backend offline"
+  },
+  "row": {
+    "video": "Vídeo",
+    "openFolder": "Abrir pasta",
+    "copyPath": "Copiar caminho",
+    "subtitle": "Legenda",
+    "output": "Saída",
+    "info": "Info",
+    "waitingSync": "Aguardando sincronização"
+  },
+  "log": {
+    "title": "Log",
+    "subtitle": "(últimas atividades)",
+    "clear": "Limpar"
+  },
+  "phase": {
+    "readyToScan": "Pronto para escanear",
+    "chooseFoldersHint": "Escolha as pastas e clique em Escanear para montar a fila.",
+    "readyToSync": "Pronto para sincronizar",
+    "queueStats": "{{total}} vídeos encontrados, {{external}} com legenda externa, {{embedded}} com legenda embutida, {{none}} sem legenda.",
+    "syncing": "Sincronizando {{done}}/{{total}}",
+    "processingQueue": "Processando a fila com ALASS e dependências configuradas.",
+    "doneWithFails": "Concluído com {{fails}} falha(s)",
+    "done": "Concluído",
+    "doneStats": "{{ok}} concluídos, {{skip}} pulados, {{fail}} falharam."
+  },
+  "errors": {
+    "sourceDirMissing": "Pasta origem não existe. Confira o caminho selecionado.",
+    "fillBothPaths": "Preencha Pasta origem e Pasta de saída.",
+    "alassNotFound": "ALASS não encontrado. Baixe as dependências na aba Configuração.",
+    "ffmpegNotFound": "FFmpeg não encontrado. Baixe as dependências na aba Configuração.",
+    "ffprobeNotFound": "FFprobe não encontrado. Baixe as dependências na aba Configuração."
+  },
+  "installer": {
+    "steps": {
+      "terms": "Termos",
+      "prepare": "Preparar",
+      "install": "Instalar",
+      "finish": "Concluir",
+      "starting": "Iniciando…"
+    },
+    "terms": {
+      "title": "Termos de Uso e Licença",
+      "intro": "Antes de instalar, leia e aceite os termos abaixo.",
+      "body": [
+        "O Syncora é um software livre, distribuído sob a licença MIT. Você pode usar, copiar, modificar e redistribuir conforme os termos dessa licença.",
+        "O app é fornecido “como está”, sem garantias de qualquer tipo. O autor não se responsabiliza por danos, perda de dados ou uso indevido.",
+        "As dependências ALASS, FFmpeg e FFprobe são projetos de terceiros, licenciados sob GPL/LGPL. Ao instalá-las, você aceita os termos dos respectivos autores.",
+        "Os dados do Syncora (fila, provedores, logs) ficam armazenados localmente no seu computador. Nada é enviado para servidores externos sem a sua ação explícita (ex.: download de legenda).",
+        "A integração com o menu de contexto do Windows modifica o Registro do usuário (HKCU) para registrar as ações “Abrir com Syncora”, “Baixar legendas” e “Baixar legendas e sincronizar”.",
+        "Você pode desinstalar tudo a qualquer momento usando o atalho “Desinstalar o Syncora” no Menu Iniciar."
+      ],
+      "accept": "Li e concordo com os termos acima"
+    },
+    "sidebar": {
+      "tagline": "Legendas sem atrito",
+      "description": "Instala o Syncora, prepara dependências essenciais e pode adicionar ações rápidas no menu do Explorer."
+    },
+    "language": {
+      "label": "Idioma"
+    },
+    "prepare": {
+      "title": "Configure o essencial antes de começar.",
+      "subtitle": "Escolha o destino e deixe o instalador preparar o que o app precisa para baixar, sincronizar e embutir legendas.",
+      "pathLabel": "Pasta de instalação",
+      "changePath": "Alterar"
+    },
+    "options": {
+      "deps": {
+        "title": "Dependências",
+        "description": "ALASS, FFmpeg e FFprobe para sincronização e softsub.",
+        "badge": "Necessário"
+      },
+      "explorer": {
+        "title": "Menu do Explorer",
+        "description": "Abrir com Syncora, Baixar legendas e Baixar legendas e sincronizar.",
+        "badge": "Opcional"
+      }
+    },
+    "actions": {
+      "back": "Voltar",
+      "install": "Instalar"
+    },
+    "install": {
+      "errorTitle": "Erro na instalação"
+    },
+    "finish": {
+      "title": "Syncora instalado!",
+      "success": "Tudo pronto. Abra o app e configure seus provedores de legenda.",
+      "withWarnings": "Instalação concluída com avisos. Verifique os logs se algo não funcionar.",
+      "openApp": "Abrir o Syncora"
+    }
+  },
+  "updates": {
+    "sectionTitle": "Atualizações",
+    "currentVersion": "Versão atual",
+    "checkNow": "Verificar agora",
+    "checking": "Verificando…",
+    "upToDate": "Você está em dia com a versão mais recente.",
+    "updateAvailable": "Syncora {{version}} disponível",
+    "downloadUpdate": "Baixar atualização",
+    "later": "Depois",
+    "checkFailed": "Falha ao verificar atualizações.",
+    "retry": "Tentar novamente",
+    "lastChecked": "Última verificação: {{when}}",
+    "neverChecked": "Nunca verificado",
+    "notes": "Notas da versão",
+    "openInGitHub": "Ver no GitHub"
+  }
+}

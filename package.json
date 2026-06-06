@@ -8,9 +8,9 @@
     "build": "npm run build:frontend",
     "build:frontend": "tsc -b && vite build",
     "build:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-backend.ps1",
-    "installer:assets": "node scripts/generate-nsis-assets.mjs",
-    "build:release": "npm run installer:assets && npm run build:backend && npm run build:frontend",
-    "inno:build": "tauri build --no-bundle && cargo build --manifest-path src-tauri/Cargo.toml --bin syncora-open --release && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-inno-installer.ps1",
+    "build:release": "npm run build:backend && npm run build:frontend",
+    "build:syncora": "npm run build:backend && npm run build:frontend && tauri build --no-bundle",
+    "inno:build": "echo [DEPRECATED] Use 'npm run build:syncora' (single-binary Tauri installer). && exit 0",
     "lint": "eslint .",
     "preview": "vite preview",
     "tauri:dev": "tauri dev",
@@ -22,8 +22,11 @@
   },
   "dependencies": {
     "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-shell": "^2.3.5",
+    "i18next": "^26.3.1",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "react-i18next": "^17.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -10,20 +10,7 @@
     "beforeBuildCommand": "npm run build:release"
   },
   "app": {
-    "windows": [
-      {
-        "title": "Syncora",
-        "width": 800,
-        "height": 800,
-        "minWidth": 800,
-        "minHeight": 800,
-        "maxWidth": 800,
-        "maxHeight": 800,
-        "resizable": false,
-        "maximizable": false,
-        "fullscreen": false
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": null
     }
@@ -39,24 +26,10 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "../backend/dist/": "backend/"
+      "../backend/dist/": "backend/",
+      "icons/": "icons/"
     },
-    "windows": {
-      "nsis": {
-        "template": "installer/syncora-installer.nsi",
-        "installerIcon": "icons/icon.ico",
-        "uninstallerIcon": "icons/icon.ico",
-        "headerImage": "installer/nsis-header.bmp",
-        "sidebarImage": "installer/nsis-sidebar.bmp",
-        "uninstallerHeaderImage": "installer/nsis-header.bmp",
-        "installMode": "currentUser",
-        "languages": [
-          "PortugueseBR"
-        ],
-        "displayLanguageSelector": false,
-        "compression": "lzma"
-      }
-    },
+    "windows": {},
     "android": {
       "debugApplicationIdSuffix": ".debug"
     }

@@ -1,0 +1,304 @@
+{
+  "app": {
+    "name": "Syncora",
+    "tagline": "Sync subtitles without the hassle."
+  },
+  "tabs": {
+    "queue": "Queue",
+    "config": "Settings"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "queue": {
+    "sourceDir": "Source folder (videos + subtitles)",
+    "outputDir": "Output folder",
+    "browse": "Browse",
+    "scan": "Scan",
+    "downloadAndSync": "Download & sync",
+    "openOptions": "Open options",
+    "closeOptions": "Close options",
+    "options": "Options",
+    "subfolders": "Subfolders",
+    "noSubfolders": "No subfolders",
+    "onlineSearch": "Online search",
+    "noOnlineSearch": "No online search",
+    "syncOn": "Sync on",
+    "downloadOnly": "Download only",
+    "softsubOn": "Softsub on",
+    "softsubOff": "Softsub off",
+    "timeoutLabel": "Timeout {{seconds}}s",
+    "scanning": "Scanning...",
+    "queueTitle": "Processing queue",
+    "all": "All",
+    "ready": "Ready",
+    "ok": "OK",
+    "skipped": "Skipped",
+    "failed": "Failed",
+    "emptyTitle": "No videos scanned yet",
+    "emptyHint": "Fill the folders above and click Scan to build the queue.",
+    "tableVideo": "Video",
+    "tableProgress": "Progress",
+    "tableActions": "Actions",
+    "progressTitle": "Overall progress",
+    "statusReady": "Ready to scan",
+    "queueCount": "{{count}} item(s) in queue",
+    "timeRemainingZero": "Time remaining: 0 min",
+    "behavior": "Behavior",
+    "onlineSearchBehavior": "Online search",
+    "forceSearch": "Force search",
+    "syncAfterDownload": "Sync after download",
+    "forceResync": "Force resync",
+    "output": "Output",
+    "keepSubfolders": "Keep subfolders",
+    "embedSoftsub": "Embed as softsub",
+    "defaultSubtitle": "Set as default",
+    "advanced": "Advanced",
+    "timeout": "Timeout",
+    "retries": "Retries",
+    "track": "Track",
+    "filterAria": "Queue filters",
+    "emptyFilterTitle": "No items in this filter",
+    "emptyFilterHint": "Switch the filter to see other files in the queue.",
+    "reprocessFailed": "Reprocess failures",
+    "downloadOnlySubtitles": "Download subtitles",
+    "total": "Total",
+    "completed": "Completed",
+    "showLog": "Show log",
+    "hideLog": "Hide log"
+  },
+  "languages": {
+    "sectionTitle": "1. Language and sources",
+    "subtitleLanguage": "Subtitle language",
+    "interfaceLanguage": "Interface language"
+  },
+  "providers": {
+    "sectionTitle": "Subtitle providers",
+    "subsectionTitle": "Subtitle providers",
+    "noKey": "No key",
+    "noApiKey": "No API key",
+    "savedKey": "Saved key",
+    "savedKeyMasked": "Saved key · {{masked}}",
+    "apiKeyLabel": "API key",
+    "apiKeyPlaceholder": "Paste the API key",
+    "apiKeySavedPlaceholder": "Saved key ({{masked}})",
+    "apiKeyShow": "Show API key",
+    "apiKeyHide": "Hide API key",
+    "usernameOptional": "Username (optional)",
+    "passwordOptional": "Password (optional)",
+    "usernamePlaceholder": "Your username",
+    "usernameSavedPlaceholder": "Saved username",
+    "passwordPlaceholder": "Paste the password",
+    "passwordSavedPlaceholder": "Saved password",
+    "apiKeyRequiredHint": "API key required. Username and password are optional and only used to validate your account and download limits.",
+    "subliminalNote": "Uses Subliminal with OpenSubtitles and Podnapisi. No API key required.",
+    "priority": "Priority",
+    "show": "Show",
+    "hide": "Hide",
+    "save": "Save",
+    "testing": "Testing...",
+    "test": "Test connection",
+    "remove": "Remove",
+    "add": "Add",
+    "loading": "Loading",
+    "disabled": "Disabled",
+    "failedChip": "Failed",
+    "readyChip": "Ready",
+    "limitChip": "Limit",
+    "connectedChip": "Connected",
+    "subliminalLegacy": "OpenSubtitles + Podnapisi legacy",
+    "connectionOkDownloadFailed": "Connection OK, but download failed in the last test",
+    "dailyLimitReached": "Daily download limit reached",
+    "accountOk": "Account OK",
+    "accountOkRemaining": "Account OK · {{remaining}} remaining",
+    "apiKeyOkLoginNeeded": "API key OK · login required to download",
+    "apiKeyOk": "API key OK"
+  },
+  "tools": {
+    "sectionTitle": "Tools",
+    "sectionTitleNumbered": "2. Tools",
+    "depsStatus": "Dependencies status",
+    "depsHint": "The tools live in the app's runtime folder. Use this area to update or repair them.",
+    "updateDeps": "Update dependencies",
+    "updating": "Updating...",
+    "toolOk": "OK",
+    "toolOff": "OFF"
+  },
+  "setup": {
+    "title": "Set up Syncora",
+    "subtitle": "Install what's missing so you can use the app without coming back to settings later.",
+    "depsLabel": "Dependencies",
+    "downloadHint": "Downloads ALASS, FFmpeg and FFprobe to sync and embed subtitles.",
+    "explorerHint": "Adds Open with Syncora, Download subtitles and Download subtitles and sync.",
+    "depsMissing": "Dependencies not found",
+    "installDeps": "Install dependencies",
+    "depsStatus": "Dependencies status",
+    "skipForNow": "Skip for now",
+    "downloadingDeps": "Downloading dependencies...",
+    "installingMenu": "Installing menu...",
+    "installAll": "Install everything",
+    "downloadDeps": "Download dependencies",
+    "installExplorerMenu": "Install Explorer menu",
+    "enterSyncora": "Open Syncora",
+    "chipChecking": "Checking",
+    "chipInstalled": "Installed",
+    "chipRequired": "Required",
+    "chipSelected": "Selected",
+    "chipOptional": "Optional"
+  },
+  "explorer": {
+    "sectionTitle": "Explorer integration",
+    "menuTitle": "Explorer menu",
+    "windowsIntegrationNumbered": "3. Windows integration",
+    "subtitle": "Adds actions to the Windows right-click menu for video files.",
+    "install": "Install",
+    "installing": "Installing...",
+    "installIntegration": "Install integration",
+    "installingIntegration": "Installing integration...",
+    "update": "Update",
+    "updateIntegration": "Update integration",
+    "uninstall": "Remove",
+    "uninstalling": "Removing...",
+    "removingIntegration": "Removing integration...",
+    "installedChip": "Installed",
+    "offChip": "Off",
+    "installedMessage": "Integration installed."
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "cancelling": "Cancelling...",
+    "back": "Back",
+    "next": "Next",
+    "install": "Install",
+    "finish": "Finish",
+    "close": "Close",
+    "open": "Open",
+    "save": "Save",
+    "search": "Search",
+    "retry": "Try again"
+  },
+  "status": {
+    "phaseReady": "Ready to scan",
+    "phaseScanning": "Scanning...",
+    "phaseSyncing": "Syncing...",
+    "phaseDone": "Done",
+    "phasePaused": "Paused"
+  },
+  "toast": {
+    "scanComplete": "Scan complete",
+    "downloadStarted": "Download started",
+    "downloadComplete": "Download complete",
+    "backendOffline": "Backend offline. Start the local server on port 8765.",
+    "noSubtitleFound": "No subtitle found for this file in the chosen language.",
+    "backendOfflineShort": "Backend offline"
+  },
+  "row": {
+    "video": "Video",
+    "openFolder": "Open folder",
+    "copyPath": "Copy path",
+    "subtitle": "Subtitle",
+    "output": "Output",
+    "info": "Info",
+    "waitingSync": "Waiting to sync"
+  },
+  "log": {
+    "title": "Log",
+    "subtitle": "(latest activity)",
+    "clear": "Clear"
+  },
+  "phase": {
+    "readyToScan": "Ready to scan",
+    "chooseFoldersHint": "Pick the folders and click Scan to build the queue.",
+    "readyToSync": "Ready to sync",
+    "queueStats": "{{total}} videos found, {{external}} with external subtitle, {{embedded}} with embedded subtitle, {{none}} with no subtitle.",
+    "syncing": "Syncing {{done}}/{{total}}",
+    "processingQueue": "Processing the queue with ALASS and configured dependencies.",
+    "doneWithFails": "Done with {{fails}} failure(s)",
+    "done": "Done",
+    "doneStats": "{{ok}} done, {{skip}} skipped, {{fail}} failed."
+  },
+  "errors": {
+    "sourceDirMissing": "Source folder does not exist. Check the selected path.",
+    "fillBothPaths": "Fill in both Source folder and Output folder.",
+    "alassNotFound": "ALASS not found. Download dependencies in the Settings tab.",
+    "ffmpegNotFound": "FFmpeg not found. Download dependencies in the Settings tab.",
+    "ffprobeNotFound": "FFprobe not found. Download dependencies in the Settings tab."
+  },
+  "installer": {
+    "steps": {
+      "terms": "Terms",
+      "prepare": "Prepare",
+      "install": "Install",
+      "finish": "Finish",
+      "starting": "Starting."
+    },
+    "terms": {
+      "title": "Terms of Use and License",
+      "intro": "Before installing, please read and accept the terms below.",
+      "body": [
+        "Syncora is free and open-source software, distributed under the MIT License. You may use, copy, modify and redistribute it under the terms of that license.",
+        "The app is provided “as is”, without warranty of any kind. The author is not liable for any damage, data loss or misuse.",
+        "ALASS, FFmpeg and FFprobe are third-party projects licensed under GPL/LGPL. By installing them, you agree to their respective authors' terms.",
+        "Syncora data (queue, providers, logs) is stored locally on your computer. Nothing is sent to external servers without your explicit action (e.g., downloading subtitles).",
+        "The Windows Explorer menu integration modifies the user Registry (HKCU) to register the actions “Open with Syncora”, “Download subtitles” and “Download subtitles and sync”.",
+        "You can uninstall everything at any time using the “Uninstall Syncora” shortcut in the Start Menu."
+      ],
+      "accept": "I have read and agree to the terms above"
+    },
+    "sidebar": {
+      "tagline": "Subtitles without friction",
+      "description": "Installs Syncora, prepares the essential dependencies and can add quick actions to the Explorer menu."
+    },
+    "language": {
+      "label": "Language"
+    },
+    "prepare": {
+      "title": "Set up the essentials before starting.",
+      "subtitle": "Pick the destination and let the installer prepare everything the app needs to download, sync and embed subtitles.",
+      "pathLabel": "Install folder",
+      "changePath": "Change"
+    },
+    "options": {
+      "deps": {
+        "title": "Dependencies",
+        "description": "ALASS, FFmpeg and FFprobe for sync and softsub embedding.",
+        "badge": "Required"
+      },
+      "explorer": {
+        "title": "Explorer menu",
+        "description": "Open with Syncora, Download subtitles, and Download & sync subtitles.",
+        "badge": "Optional"
+      }
+    },
+    "actions": {
+      "back": "Back",
+      "install": "Install"
+    },
+    "install": {
+      "errorTitle": "Installation error"
+    },
+    "finish": {
+      "title": "Syncora installed!",
+      "success": "All set. Open the app and configure your subtitle providers.",
+      "withWarnings": "Installation completed with warnings. Check the logs if anything doesn't work.",
+      "openApp": "Open Syncora"
+    }
+  },
+  "updates": {
+    "sectionTitle": "Updates",
+    "currentVersion": "Current version",
+    "checkNow": "Check now",
+    "checking": "Checking…",
+    "upToDate": "You're up to date.",
+    "updateAvailable": "Syncora {{version}} available",
+    "downloadUpdate": "Download update",
+    "later": "Later",
+    "checkFailed": "Failed to check for updates.",
+    "retry": "Retry",
+    "lastChecked": "Last checked: {{when}}",
+    "neverChecked": "Never checked",
+    "notes": "Release notes",
+    "openInGitHub": "View on GitHub"
+  }
+}

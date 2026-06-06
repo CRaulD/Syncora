@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import "./App.css";
+import { changeAppLanguage } from "./i18n";
 
 type BaseStatus = "OK" | "PULADO" | "FALHOU" | "PENDENTE" | "SEM_LEGENDA";
 type DisplayStatus = BaseStatus | "PRONTO";
@@ -10,12 +12,48 @@ type Theme = "light" | "dark";
 type LaunchAction = "queue" | "download" | "download-sync";
 type SyncPauseState = "running" | "pausing" | "paused" | "cancelling";
 
+const SUBTITLE_LANGUAGES: { code: string; label: string }[] = [
+  { code: "pt-BR", label: "Português (Brasil)" },
+  { code: "pt-PT", label: "Português (Portugal)" },
+  { code: "en", label: "English" },
+  { code: "es", label: "Español" },
+  { code: "fr", label: "Français" },
+  { code: "de", label: "Deutsch" },
+  { code: "it", label: "Italiano" },
+  { code: "nl", label: "Nederlands" },
+  { code: "pl", label: "Polski" },
+  { code: "tr", label: "Türkçe" },
+  { code: "ru", label: "Русский" },
+  { code: "ar", label: "العربية" },
+  { code: "ja", label: "日本語" },
+  { code: "ko", label: "한국어" },
+  { code: "zh-CN", label: "中文 (简体)" },
+  { code: "zh-TW", label: "中文 (繁體)" },
+  { code: "hi", label: "हिन्दी" },
+];
+
+const INTERFACE_LANGUAGES: { code: string; label: string }[] = [
+  { code: "pt-BR", label: "Português (Brasil)" },
+  { code: "en", label: "English" },
+  { code: "es", label: "Español" },
+];
+
 type ExplorerIntegrationStatus = {
   installed: boolean;
   helper_path: string;
   wrapper_dir: string;
   send_to_dir: string;
   message: string;
+};
+
+type UpdateInfo = {
+  current_version: string;
+  latest_version: string;
+  has_update: boolean;
+  release_url: string;
+  release_notes: string;
+  checked_at: number;
+  from_cache: boolean;
 };
 
 type ProviderConfig = {
@@ -65,6 +103,7 @@ type SavedConfig = {
   sourceDir: string;
   outputDir: string;
   language: string;
+  appLanguage: string;
   ignoreEmbedded: boolean;
   autoDownloadMissing: boolean;
   syncAfterDownload: boolean;
@@ -84,6 +123,7 @@ const defaultConfig: SavedConfig = {
   sourceDir: "",
   outputDir: "",
   language: "pt-BR",
+  appLanguage: "pt-BR",
   ignoreEmbedded: true,
   autoDownloadMissing: true,
   syncAfterDownload: true,
@@ -324,39 +364,39 @@ function providerLabel(providerId: ProviderId) {
   return "OpenSubtitles";
 }
 
-function providerStatus(provider?: ProviderConfig, providerId?: ProviderId) {
-  if (!provider) return { description: "Carregando", chip: "...", className: "muted" };
-  if (provider.enabled === false) return { description: "Desativado", chip: "Off", className: "off" };
-  if (!provider.configured) return { description: "Sem API key", chip: "Sem chave", className: "warn" };
+function providerStatus(t: (key: string, options?: Record<string, unknown>) => string, provider?: ProviderConfig, providerId?: ProviderId) {
+  if (!provider) return { description: t("providers.loading"), chip: "...", className: "muted" };
+  if (provider.enabled === false) return { description: t("providers.disabled"), chip: "Off", className: "off" };
+  if (!provider.configured) return { description: t("providers.noApiKey"), chip: t("providers.noKey"), className: "warn" };
   if (provider.last_download_ok === false) {
     return {
-      description: friendlyError(provider.last_download_error || "Conexão OK, mas download falhou no último teste"),
-      chip: "Falhou",
+      description: friendlyError(provider.last_download_error || t("providers.connectionOkDownloadFailed")),
+      chip: t("providers.failedChip"),
       className: "bad",
     };
   }
   if (!provider.has_api_key && provider.last_test_ok !== false) {
-    return { description: "OpenSubtitles + Podnapisi legado", chip: "Pronto", className: "ok" };
+    return { description: t("providers.subliminalLegacy"), chip: t("providers.readyChip"), className: "ok" };
   }
   if (provider.last_test_ok === true) {
     const remaining = provider.account_info?.downloads_remaining;
     if (providerId === "opensubtitles" && Number(remaining) <= 0) {
       return {
-        description: "Limite diário de downloads atingido",
-        chip: "Limite",
+        description: t("providers.dailyLimitReached"),
+        chip: t("providers.limitChip"),
         className: "warn",
       };
     }
     const accountInfo = remaining !== undefined
-      ? `Conta OK · ${remaining} restante${Number(remaining) === 1 ? "" : "s"}`
+      ? t("providers.accountOkRemaining", { remaining })
       : provider.account_connected || provider.has_password
-        ? "Conta OK"
+        ? t("providers.accountOk")
         : providerId === "opensubtitles"
-          ? "API key OK · login necessário para baixar"
-        : "API key OK";
+          ? t("providers.apiKeyOkLoginNeeded")
+        : t("providers.apiKeyOk");
     return {
       description: accountInfo,
-      chip: "Conectado",
+      chip: t("providers.connectedChip"),
       className: "ok",
     };
   }
@@ -375,6 +415,7 @@ function providerStatus(provider?: ProviderConfig, providerId?: ProviderId) {
 }
 
 export default function App() {
+  const { t } = useTranslation();
   const saved = useMemo(loadConfig, []);
   const launchFilesHandled = useRef(false);
   const [theme, setTheme] = useState<Theme>(() => (window.localStorage.getItem("synclegendas-theme") === "light" ? "light" : "dark"));
@@ -383,6 +424,7 @@ export default function App() {
   const [outputDir, setOutputDir] = useState(saved.outputDir);
   const [outputManuallyChosen, setOutputManuallyChosen] = useState(false);
   const [language, setLanguage] = useState(saved.language);
+  const [appLanguage, setAppLanguage] = useState(saved.appLanguage);
   const [ignoreEmbedded, setIgnoreEmbedded] = useState(saved.ignoreEmbedded);
   const [autoDownloadMissing, setAutoDownloadMissing] = useState(saved.autoDownloadMissing);
   const [syncAfterDownload, setSyncAfterDownload] = useState(saved.syncAfterDownload);
@@ -426,6 +468,10 @@ export default function App() {
   const [explorerMessage, setExplorerMessage] = useState("");
   const [explorerBusy, setExplorerBusy] = useState<"idle" | "install" | "uninstall">("idle");
   const [installExplorerOnSetup, setInstallExplorerOnSetup] = useState(true);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [updateCheckState, setUpdateCheckState] = useState<"idle" | "checking" | "done" | "error">("idle");
+  const [updateError, setUpdateError] = useState("");
+  const [updateDismissed, setUpdateDismissed] = useState(false);
   const [showQueueOptions, setShowQueueOptions] = useState(true);
   const [syncProgress, setSyncProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
   const [liveProgressByRow, setLiveProgressByRow] = useState<Record<string, LiveRowProgress>>({});
@@ -458,6 +504,7 @@ export default function App() {
       sourceDir,
       outputDir,
       language,
+      appLanguage,
       ignoreEmbedded,
       autoDownloadMissing,
       syncAfterDownload,
@@ -477,6 +524,7 @@ export default function App() {
     sourceDir,
     outputDir,
     language,
+    appLanguage,
     ignoreEmbedded,
     autoDownloadMissing,
     syncAfterDownload,
@@ -492,6 +540,24 @@ export default function App() {
     retries,
   ]);
 
+  useEffect(() => {
+    changeAppLanguage(appLanguage);
+  }, [appLanguage]);
+
+  useEffect(() => {
+    if (explorerStatus?.installed) {
+      void (async () => {
+        try {
+          const core = await import("@tauri-apps/api/core");
+          await core.invoke("update_explorer_labels", { lang: appLanguage });
+        } catch {
+          // best-effort: app continues even if registry write fails
+        }
+      })();
+    }
+  }, [appLanguage, explorerStatus?.installed]);
+
+
   const depsKnown = Boolean(deps.alass || deps.ffmpeg || deps.ffprobe);
   const depsReady = Boolean(deps.alass?.found && deps.ffmpeg?.found && deps.ffprobe?.found);
   const depsMissing = depsKnown && !depsReady;
@@ -503,6 +569,38 @@ export default function App() {
       setDepsSetupOpen(true);
     }
   }, [backendOk, depsMissing, depsSetupDismissed, explorerMissing]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      void runUpdateCheck(false);
+    }, 1500);
+    return () => window.clearTimeout(handle);
+  }, []);
+
+  async function runUpdateCheck(force: boolean) {
+    setUpdateCheckState("checking");
+    setUpdateError("");
+    try {
+      const core = await import("@tauri-apps/api/core");
+      const info = await core.invoke<UpdateInfo>("check_for_update", { force });
+      setUpdateInfo(info);
+      setUpdateCheckState("done");
+      setUpdateDismissed(false);
+    } catch (e: unknown) {
+      setUpdateCheckState("error");
+      setUpdateError(String(e));
+    }
+  }
+
+  async function openReleasePage() {
+    if (!updateInfo?.release_url) return;
+    try {
+      const shell = await import("@tauri-apps/plugin-shell");
+      await shell.open(updateInfo.release_url);
+    } catch (e) {
+      console.error("Falha ao abrir release page:", e);
+    }
+  }
 
   const summary = useMemo(() => {
     const total = rows.length;
@@ -525,12 +623,12 @@ export default function App() {
   const shouldReprocessFromMain = phase === "synced" && summary.pending === 0 && retryableIssueRows.length > 0;
   const canUseSyncButton = phase === "scanned" ? rows.length > 0 : shouldReprocessFromMain;
   const syncButtonLabel = loading === "sync"
-    ? (syncPauseState === "cancelling" ? "Cancelando..." : "Cancelar")
+    ? (syncPauseState === "cancelling" ? t("actions.cancelling") : t("actions.cancel"))
     : shouldReprocessFromMain
-      ? "Reprocessar falhas"
+      ? t("queue.reprocessFailed")
       : syncAfterDownload
-        ? "Baixar e sincronizar"
-        : "Baixar legendas";
+        ? t("queue.downloadAndSync")
+        : t("queue.downloadOnlySubtitles");
   const syncButtonIcon = loading === "sync"
     ? (syncPauseState === "cancelling" ? "\u2026" : "\u00d7")
     : shouldReprocessFromMain
@@ -747,17 +845,6 @@ export default function App() {
     window.localStorage.setItem("syncora-first-run-setup-dismissed", "1");
     setDepsSetupDismissed(true);
     setDepsSetupOpen(false);
-  }
-
-  function showDepsSetupAgain() {
-    window.localStorage.removeItem("syncora-first-run-setup-dismissed");
-    setDepsSetupDismissed(false);
-    setDepsSetupOpen(true);
-    setDepsMessage("");
-    setExplorerMessage("");
-    setInstallExplorerOnSetup(true);
-    void refreshDeps();
-    void refreshExplorerIntegration();
   }
 
   async function runDepsSetup() {
@@ -1684,22 +1771,22 @@ export default function App() {
 
   function renderApiKeyField(providerId: ProviderId, provider?: ProviderConfig, draft: Record<string, string> = {}) {
     const isVisible = visibleProviderKeys[providerId] ?? false;
-    const savedPlaceholder = provider?.api_key_masked ? `Chave salva (${provider.api_key_masked})` : "Chave salva";
+    const savedPlaceholder = provider?.api_key_masked ? t("providers.apiKeySavedPlaceholder", { masked: provider.api_key_masked }) : t("providers.savedKey");
     return (
       <label className="api-key-field">
-        API key
+        {t("providers.apiKeyLabel")}
         <div className="secret-input">
           <input
             type={isVisible ? "text" : "password"}
             value={draft.api_key || ""}
             onChange={(e) => updateProviderDraft(providerId, "api_key", e.target.value)}
-            placeholder={provider?.has_api_key ? savedPlaceholder : "Cole a API key"}
+            placeholder={provider?.has_api_key ? savedPlaceholder : t("providers.apiKeyPlaceholder")}
           />
           <button
             className="secret-toggle"
             type="button"
-            aria-label={isVisible ? "Esconder API key" : "Mostrar API key"}
-            title={isVisible ? "Esconder API key" : "Mostrar API key"}
+            aria-label={isVisible ? t("providers.apiKeyHide") : t("providers.apiKeyShow")}
+            title={isVisible ? t("providers.apiKeyHide") : t("providers.apiKeyShow")}
             onClick={() => setVisibleProviderKeys((old) => ({ ...old, [providerId]: !isVisible }))}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
@@ -1719,7 +1806,7 @@ export default function App() {
         {providerIds.map((providerId) => {
           const provider = providers?.[providerId];
           const draft = providerDrafts[providerId] || {};
-          const status = providerStatus(provider, providerId);
+          const status = providerStatus(t, provider, providerId);
           return (
             <div className="provider-list-item" key={providerId}>
               <button className={`provider-row ${openProvider === providerId ? "active" : ""}`} type="button" onClick={() => setOpenProvider(openProvider === providerId ? null : providerId)}>
@@ -1755,27 +1842,27 @@ export default function App() {
                   {providerId !== "subliminal" ? (
                     renderApiKeyField(providerId, provider, draft)
                   ) : (
-                    <div className="provider-note">Usa Subliminal com OpenSubtitles e Podnapisi. Nao precisa configurar API key.</div>
+                    <div className="provider-note">{t("providers.subliminalNote")}</div>
                   )}
                   {providerId === "opensubtitles" ? (
                     <>
                       <label>
-                        Usuario (opcional)
+                        {t("providers.usernameOptional")}
                         <input value={draft.username ?? provider?.username ?? ""} onChange={(e) => updateProviderDraft(providerId, "username", e.target.value)} />
                       </label>
                       <label>
-                        Senha (opcional)
-                        <input type="password" value={draft.password || ""} onChange={(e) => updateProviderDraft(providerId, "password", e.target.value)} placeholder={provider?.has_password ? "Senha salva" : "Cole a senha"} />
+                        {t("providers.passwordOptional")}
+                        <input type="password" value={draft.password || ""} onChange={(e) => updateProviderDraft(providerId, "password", e.target.value)} placeholder={provider?.has_password ? t("providers.passwordSavedPlaceholder") : t("providers.passwordPlaceholder")} />
                       </label>
-                      <div className="provider-note">API key obrigatória. Usuário e senha são opcionais para validar sua conta e limites de download.</div>
+                      <div className="provider-note">{t("providers.apiKeyRequiredHint")}</div>
                     </>
                   ) : null}
                   <label>
-                    Prioridade
+                    {t("providers.priority")}
                     <input type="number" min={1} max={9} value={draft.priority ?? provider?.priority ?? 1} onChange={(e) => updateProviderDraft(providerId, "priority", e.target.value)} />
                   </label>
-                  <button className="primary-btn provider-small-btn" onClick={() => void saveProvider(providerId)}>Salvar</button>
-                  <button className="provider-small-btn" onClick={() => void testProvider(providerId)}>Testar</button>
+                  <button className="primary-btn provider-small-btn" onClick={() => void saveProvider(providerId)}>{t("providers.save")}</button>
+                  <button className="provider-small-btn" onClick={() => void testProvider(providerId)}>{t("providers.test")}</button>
                 </div>
               ) : null}
             </div>
@@ -1788,21 +1875,24 @@ export default function App() {
   function renderLanguageCard() {
     return (
       <article className="panel config-card side-card">
-        <h2>1. Idioma e fontes</h2>
+        <h2>{t("languages.sectionTitle")}</h2>
         <div className="config-two compact-config-two">
           <label>
-            Idioma da legenda
+            {t("languages.subtitleLanguage")}
             <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-              <option>pt-BR</option>
-              <option>pt-PT</option>
-              <option>en</option>
-              <option>es</option>
+              {SUBTITLE_LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>{l.label}</option>
+              ))}
             </select>
           </label>
-          <div className="embedded-language">
-            <small>Idioma alvo detectado nas trilhas embutidas</small>
-            <b>{language}</b>
-          </div>
+          <label>
+            {t("languages.interfaceLanguage")}
+            <select value={appLanguage} onChange={(e) => setAppLanguage(e.target.value)}>
+              {INTERFACE_LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>{l.label}</option>
+              ))}
+            </select>
+          </label>
         </div>
       </article>
     );
@@ -1811,7 +1901,7 @@ export default function App() {
   function renderProvidersCard() {
     return (
       <article className="panel config-card side-card">
-        <h2>Provedores de legenda</h2>
+        <h2>{t("providers.sectionTitle")}</h2>
         {renderProviderList()}
         {providerMessage ? <div className="provider-message">{providerMessage}</div> : null}
       </article>
@@ -1821,21 +1911,21 @@ export default function App() {
   function renderToolsCard(withNumber = false) {
     return (
       <article className="panel config-card side-card">
-        <h2>{withNumber ? "2. Ferramentas" : "Ferramentas"}</h2>
+        <h2>{withNumber ? t("tools.sectionTitleNumbered") : t("tools.sectionTitle")}</h2>
         <div className="tools-grid tools-grid-status">
           <div>
-            <span className="label">Status das dependências</span>
+            <span className="label">{t("tools.depsStatus")}</span>
             <div className="deps">
-              <span className={deps?.alass?.found ? "ok" : "bad"}>ALASS {deps?.alass?.found ? "OK" : "OFF"}</span>
-              <span className={deps?.ffmpeg?.found ? "ok" : "bad"}>FFmpeg {deps?.ffmpeg?.found ? "OK" : "OFF"}</span>
-              <span className={deps?.ffprobe?.found ? "ok" : "bad"}>FFprobe {deps?.ffprobe?.found ? "OK" : "OFF"}</span>
+              <span className={deps?.alass?.found ? "ok" : "bad"}>ALASS {deps?.alass?.found ? t("tools.toolOk") : t("tools.toolOff")}</span>
+              <span className={deps?.ffmpeg?.found ? "ok" : "bad"}>FFmpeg {deps?.ffmpeg?.found ? t("tools.toolOk") : t("tools.toolOff")}</span>
+              <span className={deps?.ffprobe?.found ? "ok" : "bad"}>FFprobe {deps?.ffprobe?.found ? t("tools.toolOk") : t("tools.toolOff")}</span>
             </div>
-            <small>As ferramentas ficam na pasta runtime do aplicativo. Use esta área para atualizar ou reparar.</small>
+            <small>{t("tools.depsHint")}</small>
           </div>
         </div>
         <div className="tool-actions single-action">
           <button className="primary-btn" onClick={() => void installDeps("all")} disabled={loading !== "idle"}>
-            {loading === "sync" ? "Atualizando..." : "Atualizar dependências"}
+            {loading === "sync" ? t("tools.updating") : t("tools.updateDeps")}
           </button>
         </div>
         {depsMessage ? <div className="deps-message">{depsMessage}</div> : null}
@@ -1844,32 +1934,29 @@ export default function App() {
   }
 
   function renderExplorerCard() {
-    const showExplorerMessage = explorerMessage && explorerMessage !== "Integração instalada.";
+    const showExplorerMessage = explorerMessage && explorerMessage !== t("explorer.installedMessage");
     return (
       <article className="panel config-card explorer-card">
         <div className="config-card-title-row">
-          <h2>Menu do Explorer</h2>
+          <h2>{t("explorer.menuTitle")}</h2>
           <span className={`status-pill ${explorerStatus?.installed ? "ok" : "off"}`}>
-            {explorerStatus?.installed ? "Instalada" : "Off"}
+            {explorerStatus?.installed ? t("explorer.installedChip") : t("explorer.offChip")}
           </span>
         </div>
-        <p>Ações no menu de contexto para arquivos de vídeo.</p>
+        <p>{t("explorer.subtitle")}</p>
         <div className="explorer-actions compact">
           <button
             className="primary-btn"
             onClick={() => void runExplorerIntegration("install")}
             disabled={explorerBusy !== "idle"}
           >
-            {explorerBusy === "install" ? "Instalando..." : explorerStatus?.installed ? "Atualizar" : "Instalar"}
+            {explorerBusy === "install" ? t("explorer.installing") : explorerStatus?.installed ? t("explorer.update") : t("explorer.install")}
           </button>
           <button
             onClick={() => void runExplorerIntegration("uninstall")}
-            disabled={explorerBusy !== "idle" || !explorerStatus?.installed}
+            disabled={explorerBusy !== "uninstall" || !explorerStatus?.installed}
           >
-            {explorerBusy === "uninstall" ? "Removendo..." : "Remover"}
-          </button>
-          <button type="button" onClick={showDepsSetupAgain}>
-            Mostrar tela inicial
+            {explorerBusy === "uninstall" ? t("explorer.uninstalling") : t("explorer.uninstall")}
           </button>
         </div>
         {showExplorerMessage ? <div className="deps-message">{explorerMessage}</div> : null}
@@ -1877,31 +1964,100 @@ export default function App() {
     );
   }
 
+  function renderUpdatesCard() {
+    const checking = updateCheckState === "checking";
+    const hasUpdate = updateInfo?.has_update === true;
+    const lastChecked = updateInfo?.checked_at
+      ? new Date(updateInfo.checked_at * 1000).toLocaleString()
+      : null;
+    return (
+      <article className="panel config-card updates-card">
+        <div className="config-card-title-row">
+          <h2>{t("updates.sectionTitle")}</h2>
+          {hasUpdate ? (
+            <span className="status-pill warn">{updateInfo?.latest_version}</span>
+          ) : updateCheckState === "done" ? (
+            <span className="status-pill ok">{t("updates.upToDate").split(" ")[0]}</span>
+          ) : null}
+        </div>
+        <div className="updates-row">
+          <div>
+            <div className="updates-version">
+              <strong>{t("updates.currentVersion")}:</strong>{" "}
+              <span className="mono">v{updateInfo?.current_version ?? "0.1.0"}</span>
+            </div>
+            <small className="updates-last">
+              {lastChecked
+                ? t("updates.lastChecked", { when: lastChecked })
+                : t("updates.neverChecked")}
+            </small>
+          </div>
+          <button
+            className="primary-btn"
+            onClick={() => void runUpdateCheck(true)}
+            disabled={checking}
+          >
+            {checking ? t("updates.checking") : t("updates.checkNow")}
+          </button>
+        </div>
+        {hasUpdate && updateInfo ? (
+          <div className="updates-available">
+            <div className="updates-available-head">
+              <strong>{t("updates.updateAvailable", { version: updateInfo.latest_version })}</strong>
+              <div className="updates-actions">
+                <button className="primary-btn" onClick={() => void openReleasePage()}>
+                  {t("updates.downloadUpdate")}
+                </button>
+                <button onClick={() => setUpdateDismissed(true)}>
+                  {t("updates.later")}
+                </button>
+              </div>
+            </div>
+            {updateInfo.release_notes ? (
+              <details className="updates-notes">
+                <summary>{t("updates.notes")}</summary>
+                <pre>{updateInfo.release_notes}</pre>
+              </details>
+            ) : null}
+          </div>
+        ) : null}
+        {updateCheckState === "error" ? (
+          <div className="deps-message error">
+            {updateError || t("updates.checkFailed")}{" "}
+            <button onClick={() => void runUpdateCheck(true)} className="link-btn">
+              {t("updates.retry")}
+            </button>
+          </div>
+        ) : null}
+      </article>
+    );
+  }
+
   function renderDepsSetupModal() {
     const firstRunBusy = loading !== "idle" || explorerBusy !== "idle";
-    const depsChip = !depsKnown ? "Verificando" : depsReady ? "Instalado" : "Necessario";
+    const depsChip = !depsKnown ? t("setup.chipChecking") : depsReady ? t("setup.chipInstalled") : t("setup.chipRequired");
     const depsChipClass = depsReady ? "ok" : depsKnown ? "bad" : "warn";
     const explorerSetupSelected = Boolean(explorerStatus?.installed || installExplorerOnSetup);
     const explorerChip = !explorerKnown
-      ? "Verificando"
+      ? t("setup.chipChecking")
       : explorerStatus?.installed
-        ? "Instalado"
+        ? t("setup.chipInstalled")
         : installExplorerOnSetup
-          ? "Selecionado"
-          : "Opcional";
+          ? t("setup.chipSelected")
+          : t("setup.chipOptional");
     const explorerChipClass = explorerStatus?.installed ? "ok" : installExplorerOnSetup ? "warn" : "muted";
     const setupComplete = !depsMissing && (!explorerMissing || !installExplorerOnSetup);
     const primaryLabel = firstRunBusy
       ? loading !== "idle"
-        ? "Baixando dependencias..."
-        : "Instalando menu..."
+        ? t("setup.downloadingDeps")
+        : t("setup.installingMenu")
       : depsMissing && explorerMissing && installExplorerOnSetup
-        ? "Instalar tudo"
+        ? t("setup.installAll")
         : depsMissing
-          ? "Baixar dependencias"
+          ? t("setup.downloadDeps")
           : explorerMissing && installExplorerOnSetup
-            ? "Instalar menu do Explorer"
-            : "Entrar no Syncora";
+            ? t("setup.installExplorerMenu")
+            : t("setup.enterSyncora");
     const handlePrimarySetupAction = setupComplete ? dismissDepsSetup : runDepsSetup;
 
     return (
@@ -1910,8 +2066,8 @@ export default function App() {
           <div className="setup-modal-head">
             <div className="setup-modal-icon">✓</div>
             <div>
-              <h2 id="deps-setup-title">Preparar o Syncora</h2>
-              <p>Instale o que falta para usar o app sem voltar na configuração depois.</p>
+              <h2 id="deps-setup-title">{t("setup.title")}</h2>
+              <p>{t("setup.subtitle")}</p>
             </div>
           </div>
 
@@ -1919,12 +2075,12 @@ export default function App() {
             <div className={`setup-dep-row setup-task-row ${depsReady ? "done" : ""}`}>
               <span className="setup-check">{depsReady ? "✓" : "1"}</span>
               <div>
-                <strong>Dependências</strong>
-                <small>Baixa ALASS, FFmpeg e FFprobe para sincronizar e embutir legendas.</small>
+                <strong>{t("setup.depsLabel")}</strong>
+                <small>{t("setup.downloadHint")}</small>
                 <div className="setup-mini-chips">
-                  <span className={`status-pill ${deps?.alass?.found ? "ok" : "bad"}`}>ALASS {deps?.alass?.found ? "OK" : "OFF"}</span>
-                  <span className={`status-pill ${deps?.ffmpeg?.found ? "ok" : "bad"}`}>FFmpeg {deps?.ffmpeg?.found ? "OK" : "OFF"}</span>
-                  <span className={`status-pill ${deps?.ffprobe?.found ? "ok" : "bad"}`}>FFprobe {deps?.ffprobe?.found ? "OK" : "OFF"}</span>
+                  <span className={`status-pill ${deps?.alass?.found ? "ok" : "bad"}`}>ALASS {deps?.alass?.found ? t("tools.toolOk") : t("tools.toolOff")}</span>
+                  <span className={`status-pill ${deps?.ffmpeg?.found ? "ok" : "bad"}`}>FFmpeg {deps?.ffmpeg?.found ? t("tools.toolOk") : t("tools.toolOff")}</span>
+                  <span className={`status-pill ${deps?.ffprobe?.found ? "ok" : "bad"}`}>FFprobe {deps?.ffprobe?.found ? t("tools.toolOk") : t("tools.toolOff")}</span>
                 </div>
               </div>
               <span className={`status-pill ${depsChipClass}`}>{depsChip}</span>
@@ -1938,19 +2094,19 @@ export default function App() {
               />
               <span className="setup-check">{explorerSetupSelected ? "✓" : "2"}</span>
               <div>
-                <strong>Menu do Explorer</strong>
-                <small>Adiciona Abrir com Syncora, Baixar legendas e Baixar legendas e sincronizar.</small>
+                <strong>{t("explorer.menuTitle")}</strong>
+                <small>{t("setup.explorerHint")}</small>
               </div>
               <span className={`status-pill ${explorerChipClass}`}>{explorerChip}</span>
             </label>
             {depsMessage ? <div className="deps-message setup-message">{depsMessage}</div> : null}
-            {explorerMessage && explorerMessage !== "Integração instalada." ? (
+            {explorerMessage && explorerMessage !== t("explorer.installedMessage") ? (
               <div className="deps-message setup-message">{explorerMessage}</div>
             ) : null}
           </div>
 
           <div className="setup-modal-actions">
-            <button type="button" onClick={dismissDepsSetup} disabled={firstRunBusy}>Pular por agora</button>
+            <button type="button" onClick={dismissDepsSetup} disabled={firstRunBusy}>{t("setup.skipForNow")}</button>
             <button className="primary-btn" type="button" onClick={() => void handlePrimarySetupAction()} disabled={firstRunBusy}>
               {primaryLabel}
             </button>
@@ -1969,10 +2125,10 @@ export default function App() {
         </div>
         <nav className="tabs">
           <button className={activeTab === "fila" ? "active" : ""} onClick={() => setActiveTab("fila")}>
-            <span>▪</span> Fila
+            <span>▪</span> {t("tabs.queue")}
           </button>
           <button className={activeTab === "config" ? "active" : ""} onClick={() => setActiveTab("config")}>
-            <span>⚙</span> Configuração
+            <span>⚙</span> {t("tabs.config")}
           </button>
         </nav>
         <div className="top-actions">
@@ -1995,27 +2151,27 @@ export default function App() {
                   <span>{phaseInfo.text}</span>
                 </div>
                 <span>{summary.total} item(ns)</span>
-                <span>Backend offline</span>
+                <span>{t("toast.backendOfflineShort")}</span>
               </section>
             ) : null}
 
             <section className="panel path-panel">
               <div className="path-field">
-                <label>Pasta origem (vídeos + legendas)</label>
+                <label>{t("queue.sourceDir")}</label>
                 <div className="input-action">
                   <input value={sourceDir} onChange={(e) => applySourceDir(e.target.value)} />
-                  <button onClick={() => void pickPathAsync("origem")}><span>□</span> Procurar</button>
+                  <button onClick={() => void pickPathAsync("origem")}><span>□</span> {t("queue.browse")}</button>
                 </div>
               </div>
               <div className="path-field">
-                <label>Pasta de saída</label>
+                <label>{t("queue.outputDir")}</label>
                 <div className="input-action">
                   <input value={outputDir} onChange={(e) => applyOutputDir(e.target.value, true)} />
-                  <button onClick={() => void pickPathAsync("saida")}><span>□</span> Procurar</button>
+                  <button onClick={() => void pickPathAsync("saida")}><span>□</span> {t("queue.browse")}</button>
                 </div>
               </div>
               <button className="scan-btn" onClick={handleScan} disabled={loading !== "idle"}>
-                <span>⌕</span>{loading === "scan" ? "Escaneando..." : "Escanear"}
+                <span>⌕</span>{loading === "scan" ? "..." : t("queue.scan")}
               </button>
               <button
                 className={`primary-btn sync-btn ${syncPaused ? "paused" : ""}`}
@@ -2029,24 +2185,24 @@ export default function App() {
             <section className={`panel queue-options-panel ${showQueueOptions ? "" : "collapsed"}`}>
               <div className="queue-options-head">
                 <div className="queue-option-summary">
-                  <strong>Opções</strong>
-                  <span>{preserveFolders ? "Subpastas" : "Sem subpastas"}</span>
-                  <span>{autoDownloadMissing ? "Busca online" : "Sem busca online"}</span>
-                  <span>{syncAfterDownload ? "Sync on" : "Só download"}</span>
-                  <span>{embedSoftsub ? "Softsub on" : "Softsub off"}</span>
-                  <span>Timeout {timeoutSeconds}s</span>
+                  <strong>{t("queue.options")}</strong>
+                  <span>{preserveFolders ? t("queue.subfolders") : t("queue.noSubfolders")}</span>
+                  <span>{autoDownloadMissing ? t("queue.onlineSearch") : t("queue.noOnlineSearch")}</span>
+                  <span>{syncAfterDownload ? t("queue.syncOn") : t("queue.downloadOnly")}</span>
+                  <span>{embedSoftsub ? t("queue.softsubOn") : t("queue.softsubOff")}</span>
+                  <span>{t("queue.timeoutLabel", { seconds: timeoutSeconds })}</span>
                 </div>
-                <button onClick={() => setShowQueueOptions((value) => !value)}>{showQueueOptions ? "Fechar opções" : "Abrir opções"}</button>
+                <button onClick={() => setShowQueueOptions((value) => !value)}>{showQueueOptions ? t("queue.closeOptions") : t("queue.openOptions")}</button>
               </div>
               {showQueueOptions ? (
                 <div className="queue-option-content compact-options opcoes-body">
                   <div className="option-group behavior-group opcao-card">
-                    <div className="opcao-titulo">Comportamento</div>
+                    <div className="opcao-titulo">{t("queue.behavior")}</div>
                     <div className="option-two-cols">
                       <label className="switch-row toggle-row">
                         <input type="checkbox" checked={autoDownloadMissing} onChange={(e) => setAutoDownloadMissing(e.target.checked)} />
                         <span className="switch" />
-                        Busca online
+                        {t("queue.onlineSearchBehavior")}
                       </label>
                       <label className="switch-row toggle-row">
                         <input
@@ -2058,55 +2214,55 @@ export default function App() {
                           }}
                         />
                         <span className="switch" />
-                        Forçar busca
+                        {t("queue.forceSearch")}
                       </label>
                       <label className="switch-row toggle-row">
                         <input type="checkbox" checked={syncAfterDownload} onChange={(e) => setSyncAfterDownload(e.target.checked)} />
                         <span className="switch" />
-                        Sincronizar após baixar
+                        {t("queue.syncAfterDownload")}
                       </label>
                       <label className="switch-row toggle-row">
                         <input type="checkbox" checked={forceResync} onChange={(e) => setForceResync(e.target.checked)} />
                         <span className="switch" />
-                        Forçar sincronização
+                        {t("queue.forceResync")}
                       </label>
                     </div>
                   </div>
 
                   <div className="option-group output-group opcao-card">
-                    <div className="opcao-titulo">Saída</div>
+                    <div className="opcao-titulo">{t("queue.output")}</div>
                     <div className="option-two-cols">
                       <label className="switch-row toggle-row">
                         <input type="checkbox" checked={preserveFolders} onChange={(e) => setPreserveFolders(e.target.checked)} />
                         <span className="switch" />
-                        Manter subpastas
+                        {t("queue.keepSubfolders")}
                       </label>
                       <label className="switch-row toggle-row">
                         <input type="checkbox" checked={embedSoftsub} onChange={(e) => setEmbedSoftsub(e.target.checked)} />
                         <span className="switch" />
-                        Embutir softsub
+                        {t("queue.embedSoftsub")}
                       </label>
                       <label className="switch-row toggle-row">
                         <input type="checkbox" checked={subtitleDefault} onChange={(e) => setSubtitleDefault(e.target.checked)} />
                         <span className="switch" />
-                        Legenda default
+                        {t("queue.defaultSubtitle")}
                       </label>
                     </div>
                     <label className="text-setting wide-setting opcao-label-muted">
-                      Trilha
+                      {t("queue.track")}
                       <input value={subtitleTrack} onChange={(e) => setSubtitleTrack(e.target.value)} placeholder="Portuguese (Sync)" />
                     </label>
                   </div>
 
                   <div className="option-group advanced-group opcao-card">
-                    <div className="opcao-titulo">Avançado</div>
+                    <div className="opcao-titulo">{t("queue.advanced")}</div>
                     <div className="advanced-compact opcao-grid-2col">
                       <label className="text-setting opcao-label-muted">
-                        Timeout
+                        {t("queue.timeout")}
                         <input type="number" min={30} value={timeoutSeconds} onChange={(e) => setTimeoutSeconds(Number(e.target.value) || 900)} />
                       </label>
                       <label className="text-setting opcao-label-muted">
-                        Retries
+                        {t("queue.retries")}
                         <input type="number" min={0} max={10} value={retries} onChange={(e) => setRetries(Number(e.target.value) || 0)} />
                       </label>
                     </div>
@@ -2117,28 +2273,28 @@ export default function App() {
 
             <section className="queue-table">
               <div className="table-toolbar">
-                <strong>Fila de processamento</strong>
-                <div className="filter-tabs" aria-label="Filtros da fila">
-                  <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>Todos <b>{summary.total}</b></button>
-                  <button className={filter === "ready" ? "active" : ""} onClick={() => setFilter("ready")} disabled={phase !== "scanned"}>Aguardando <b>{summary.ready}</b></button>
-                  <button className={filter === "ok" ? "active" : ""} onClick={() => setFilter("ok")}>OK <b>{summary.ok}</b></button>
-                  <button className={filter === "skip" ? "active" : ""} onClick={() => setFilter("skip")}>Pulados <b>{summary.skip}</b></button>
-                  <button className={filter === "fail" ? "active" : ""} onClick={() => setFilter("fail")}>Falhas <b>{summary.fail}</b></button>
+                <strong>{t("queue.queueTitle")}</strong>
+                <div className="filter-tabs" aria-label={t("queue.filterAria")}>
+                  <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>{t("queue.all")} <b>{summary.total}</b></button>
+                  <button className={filter === "ready" ? "active" : ""} onClick={() => setFilter("ready")} disabled={phase !== "scanned"}>{t("queue.ready")} <b>{summary.ready}</b></button>
+                  <button className={filter === "ok" ? "active" : ""} onClick={() => setFilter("ok")}>{t("queue.ok")} <b>{summary.ok}</b></button>
+                  <button className={filter === "skip" ? "active" : ""} onClick={() => setFilter("skip")}>{t("queue.skipped")} <b>{summary.skip}</b></button>
+                  <button className={filter === "fail" ? "active" : ""} onClick={() => setFilter("fail")}>{t("queue.failed")} <b>{summary.fail}</b></button>
                 </div>
               </div>
               <div className="table-head">
-                <span>Vídeo</span><span>Andamento</span><span>Ações</span>
+                <span>{t("queue.tableVideo")}</span><span>{t("queue.tableProgress")}</span><span>{t("queue.tableActions")}</span>
               </div>
               <div className="table-body">
                 {rows.length === 0 ? (
                   <div className="empty-state">
-                    <strong>Nenhum vídeo escaneado ainda</strong>
-                    <span>Preencha as pastas acima e clique em Escanear para montar a fila.</span>
+                    <strong>{t("queue.emptyTitle")}</strong>
+                    <span>{t("queue.emptyHint")}</span>
                   </div>
                 ) : filteredRows.length === 0 ? (
                   <div className="empty-state">
-                    <strong>Nenhum item neste filtro</strong>
-                    <span>Troque o filtro para ver os outros arquivos da fila.</span>
+                    <strong>{t("queue.emptyFilterTitle")}</strong>
+                    <span>{t("queue.emptyFilterHint")}</span>
                   </div>
                 ) : (
                   filteredRows.map((row) => {
@@ -2198,16 +2354,16 @@ export default function App() {
                         {openRowMenu === key ? (
                           <div className="row-menu-inline">
                             <button onClick={() => toggleRow(key)}>{expandedRows[key] ? "Ocultar detalhes" : "Detalhes"}</button>
-                            <button onClick={() => { setOpenRowMenu(null); void openPath(sourceTarget); }}>Abrir pasta</button>
-                            <button onClick={() => { setOpenRowMenu(null); void copyPath(copyTarget); }}>Copiar caminho</button>
+                            <button onClick={() => { setOpenRowMenu(null); void openPath(sourceTarget); }}>{t("row.openFolder")}</button>
+                            <button onClick={() => { setOpenRowMenu(null); void copyPath(copyTarget); }}>{t("row.copyPath")}</button>
                           </div>
                         ) : null}
                         {expandedRows[key] ? (
                           <div className="row-details">
-                            <span><b>Vídeo:</b> {row.video_full || row.path || "-"}</span>
-                            <span><b>Legenda:</b> {row.subtitle || "-"} {row.subtitleMeta ? `(${row.subtitleMeta})` : ""}</span>
-                            <span><b>Saída:</b> {phase === "scanned" ? "Aguardando sincronização" : row.output || "-"}</span>
-                            <span><b>Info:</b> {friendlyRowMessage(row, "-")}</span>
+                            <span><b>{t("row.video")}:</b> {row.video_full || row.path || "-"}</span>
+                            <span><b>{t("row.subtitle")}:</b> {row.subtitle || "-"} {row.subtitleMeta ? `(${row.subtitleMeta})` : ""}</span>
+                            <span><b>{t("row.output")}:</b> {phase === "scanned" ? t("row.waitingSync") : row.output || "-"}</span>
+                            <span><b>{t("row.info")}:</b> {friendlyRowMessage(row, "-")}</span>
                           </div>
                         ) : null}
                       </div>
@@ -2219,23 +2375,23 @@ export default function App() {
 
             <section className={`dashboard-row ${summary.total === 0 ? "empty" : ""} ${showLog ? "" : "compact-dashboard"}`}>
               <article className="panel progress-panel">
-                <h3>Progresso geral</h3>
+                <h3>{t("queue.progressTitle")}</h3>
                 <div className="progress-line"><div style={{ width: `${progress}%` }} /></div>
                 <strong>{progress}%</strong>
                 <div className="stats">
-                  <div><small>Total</small><b>{summary.total}</b></div>
-                  <div><small>Concluídos</small><b className="ok-text">{summary.ok}</b></div>
-                  <div><small>Pulados</small><b className="skip-text">{summary.skip}</b></div>
-                  <div><small>Falhas</small><b className="fail-text">{summary.fail}</b></div>
+                  <div><small>{t("queue.total")}</small><b>{summary.total}</b></div>
+                  <div><small>{t("queue.completed")}</small><b className="ok-text">{summary.ok}</b></div>
+                  <div><small>{t("queue.skipped")}</small><b className="skip-text">{summary.skip}</b></div>
+                  <div><small>{t("queue.failed")}</small><b className="fail-text">{summary.fail}</b></div>
                 </div>
-                <button className="log-toggle compact-log-toggle" onClick={() => setShowLog((value) => !value)}>{showLog ? "Ocultar log" : "Mostrar log"}</button>
+                <button className="log-toggle compact-log-toggle" onClick={() => setShowLog((value) => !value)}>{showLog ? t("queue.hideLog") : t("queue.showLog")}</button>
               </article>
 
               {showLog ? (
                 <article className="panel log-panel">
                   <div className="panel-head">
-                    <h3>Log <span>(últimas atividades)</span></h3>
-                    <button onClick={() => setLogs([])}>Limpar</button>
+                    <h3>{t("log.title")} <span>{t("log.subtitle")}</span></h3>
+                    <button onClick={() => setLogs([])}>{t("log.clear")}</button>
                   </div>
                   {logs.length ? (
                     <ul>
@@ -2260,31 +2416,35 @@ export default function App() {
             </div>
             {renderToolsCard(false)}
             {renderExplorerCard()}
+            {renderUpdatesCard()}
             {showLegacyConfig && (
             <>
             <article className="panel config-card">
-              <h2>1. Idioma e fontes</h2>
+              <h2>{t("languages.sectionTitle")}</h2>
               <div className="config-two">
                 <label>
-                  Idioma da legenda
+                  {t("languages.subtitleLanguage")}
                   <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-                    <option>pt-BR</option>
-                    <option>pt-PT</option>
-                    <option>en</option>
-                    <option>es</option>
+                    {SUBTITLE_LANGUAGES.map((l) => (
+                      <option key={l.code} value={l.code}>{l.label}</option>
+                    ))}
                   </select>
                 </label>
-                <div className="embedded-language">
-                  <small>Idioma alvo detectado nas trilhas embutidas</small>
-                  <b>{language}</b>
-                </div>
+                <label>
+                  {t("languages.interfaceLanguage")}
+                  <select value={appLanguage} onChange={(e) => setAppLanguage(e.target.value)}>
+                    {INTERFACE_LANGUAGES.map((l) => (
+                      <option key={l.code} value={l.code}>{l.label}</option>
+                    ))}
+                  </select>
+                </label>
               </div>
-              <h3 className="subsection-title">Provedores de legenda</h3>
+              <h3 className="subsection-title">{t("providers.subsectionTitle")}</h3>
               <div className="provider-list">
                 {(["subdl", "opensubtitles", "subsource"] as ProviderId[]).map((providerId) => {
                   const provider = providers?.[providerId];
                   const draft = providerDrafts[providerId] || {};
-                  const status = providerStatus(provider, providerId);
+                  const status = providerStatus(t, provider, providerId);
                   return (
                     <div className="provider-list-item" key={providerId}>
                       <button
@@ -2327,30 +2487,30 @@ export default function App() {
                             renderApiKeyField(providerId, provider, draft)
                           ) : (
                             <div className="provider-note">
-                              Usa Subliminal com OpenSubtitles e Podnapisi. Não precisa configurar API key.
+                              {t("providers.subliminalNote")}
                             </div>
                           )}
                           {providerId === "opensubtitles" ? (
                             <>
                               <label>
-                                Usuário (opcional)
+                                {t("providers.usernameOptional")}
                                 <input value={draft.username ?? provider?.username ?? ""} onChange={(e) => updateProviderDraft(providerId, "username", e.target.value)} />
                               </label>
                               <label>
-                                Senha (opcional)
-                                <input type="password" value={draft.password || ""} onChange={(e) => updateProviderDraft(providerId, "password", e.target.value)} placeholder={provider?.has_password ? "Senha salva" : "Cole a senha"} />
+                                {t("providers.passwordOptional")}
+                                <input type="password" value={draft.password || ""} onChange={(e) => updateProviderDraft(providerId, "password", e.target.value)} placeholder={provider?.has_password ? t("providers.passwordSavedPlaceholder") : t("providers.passwordPlaceholder")} />
                               </label>
                               <div className="provider-note">
-                                API key obrigatória. Usuário e senha são opcionais para validar sua conta e limites de download.
+                                {t("providers.apiKeyRequiredHint")}
                               </div>
                             </>
                           ) : null}
                           <label>
-                            Prioridade
+                            {t("providers.priority")}
                             <input type="number" min={1} max={9} value={draft.priority ?? provider?.priority ?? 1} onChange={(e) => updateProviderDraft(providerId, "priority", e.target.value)} />
                           </label>
-                          <button className="primary-btn provider-small-btn" onClick={() => void saveProvider(providerId)}>Salvar</button>
-                          <button className="provider-small-btn" onClick={() => void testProvider(providerId)}>Testar</button>
+                          <button className="primary-btn provider-small-btn" onClick={() => void saveProvider(providerId)}>{t("providers.save")}</button>
+                          <button className="provider-small-btn" onClick={() => void testProvider(providerId)}>{t("providers.test")}</button>
                         </div>
                       ) : null}
                     </div>
@@ -2361,21 +2521,21 @@ export default function App() {
             </article>
 
             <article className="panel config-card">
-              <h2>2. Ferramentas</h2>
+              <h2>{t("tools.sectionTitleNumbered")}</h2>
               <div className="tools-grid tools-grid-status">
                 <div>
-                  <span className="label">Status das dependências</span>
+                  <span className="label">{t("tools.depsStatus")}</span>
                   <div className="deps">
-                    <span className={deps?.alass?.found ? "ok" : "bad"}>ALASS {deps?.alass?.found ? "OK" : "OFF"}</span>
-                    <span className={deps?.ffmpeg?.found ? "ok" : "bad"}>FFmpeg {deps?.ffmpeg?.found ? "OK" : "OFF"}</span>
-                    <span className={deps?.ffprobe?.found ? "ok" : "bad"}>FFprobe {deps?.ffprobe?.found ? "OK" : "OFF"}</span>
+                    <span className={deps?.alass?.found ? "ok" : "bad"}>ALASS {deps?.alass?.found ? t("tools.toolOk") : t("tools.toolOff")}</span>
+                    <span className={deps?.ffmpeg?.found ? "ok" : "bad"}>FFmpeg {deps?.ffmpeg?.found ? t("tools.toolOk") : t("tools.toolOff")}</span>
+                    <span className={deps?.ffprobe?.found ? "ok" : "bad"}>FFprobe {deps?.ffprobe?.found ? t("tools.toolOk") : t("tools.toolOff")}</span>
                   </div>
-                  <small>As ferramentas ficam na pasta runtime do aplicativo. Use esta área para atualizar ou reparar.</small>
+                  <small>{t("tools.depsHint")}</small>
                 </div>
               </div>
               <div className="tool-actions single-action">
                 <button className="primary-btn" onClick={() => void installDeps("all")} disabled={loading !== "idle"}>
-                  {loading === "sync" ? "Atualizando..." : "Atualizar dependências"}
+                  {loading === "sync" ? t("tools.updating") : t("tools.updateDeps")}
                 </button>
               </div>
               {depsMessage ? <div className="deps-message">{depsMessage}</div> : null}
@@ -2383,13 +2543,13 @@ export default function App() {
 
             <article className="panel config-card explorer-card">
               <div className="config-card-title-row">
-                <h2>3. Integração do Windows</h2>
+                <h2>{t("explorer.windowsIntegrationNumbered")}</h2>
                 <span className={`status-pill ${explorerStatus?.installed ? "ok" : "off"}`}>
-                  {explorerStatus?.installed ? "Instalada" : "Off"}
+                  {explorerStatus?.installed ? t("explorer.installedChip") : t("explorer.offChip")}
                 </span>
               </div>
               <p>
-                Adiciona as ações Abrir com Syncora, Baixar legendas e Baixar legendas e sincronizar no Explorer.
+                {t("explorer.subtitle")}
               </p>
               <div className="explorer-actions">
                 <button
@@ -2397,16 +2557,13 @@ export default function App() {
                   onClick={() => void runExplorerIntegration("install")}
                   disabled={explorerBusy !== "idle"}
                 >
-                  {explorerBusy === "install" ? "Instalando..." : explorerStatus?.installed ? "Atualizar integração" : "Instalar integração"}
+                  {explorerBusy === "install" ? t("explorer.installing") : explorerStatus?.installed ? t("explorer.updateIntegration") : t("explorer.installIntegration")}
                 </button>
                 <button
                   onClick={() => void runExplorerIntegration("uninstall")}
                   disabled={explorerBusy !== "idle" || !explorerStatus?.installed}
                 >
-                  {explorerBusy === "uninstall" ? "Removendo..." : "Remover"}
-                </button>
-                <button type="button" onClick={showDepsSetupAgain}>
-                  Mostrar tela inicial
+                  {explorerBusy === "uninstall" ? t("explorer.uninstalling") : t("explorer.uninstall")}
                 </button>
               </div>
               {explorerMessage ? <div className="deps-message">{explorerMessage}</div> : null}
@@ -2419,9 +2576,26 @@ export default function App() {
         </div>
       </main>
       {depsSetupOpen ? renderDepsSetupModal() : null}
+      {updateInfo?.has_update && !updateDismissed ? (
+        <div className="update-notice" role="alert">
+          <div className="update-notice-icon">↑</div>
+          <div className="update-notice-body">
+            <strong>{t("updates.updateAvailable", { version: updateInfo.latest_version })}</strong>
+            <small>v{updateInfo.current_version} → v{updateInfo.latest_version}</small>
+          </div>
+          <div className="update-notice-actions">
+            <button className="primary-btn" onClick={() => void openReleasePage()}>
+              {t("updates.downloadUpdate")}
+            </button>
+            <button onClick={() => setUpdateDismissed(true)} aria-label={t("updates.later")}>
+              ×
+            </button>
+          </div>
+        </div>
+      ) : null}
       <footer className="statusbar">
         <span>{phaseInfo.title}</span>
-        <span>{phase === "synced" ? `Tempo restante: 0 min` : `${summary.total} item(ns) na fila`}</span>
+        <span>{phase === "synced" ? t("queue.timeRemainingZero") : t("queue.queueCount", { count: summary.total })}</span>
       </footer>
     </div>
   );

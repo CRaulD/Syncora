@@ -1295,7 +1295,7 @@ select:focus {
 
 .syncora-config .config-two {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
   align-items: start;
 }
@@ -1306,22 +1306,6 @@ select:focus {
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
-}
-
-.syncora-config .embedded-language small {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.25;
-}
-
-.syncora-config .embedded-language b {
-  display: block;
-  font-size: 34px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.03em;
 }
 
 .syncora-config .provider-list {
@@ -1902,6 +1886,181 @@ select:focus {
 .filter-tabs::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: #3a3a3a;
+}
+
+.updates-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 8px 0 4px;
+}
+
+.updates-version strong {
+  font-size: 13px;
+  color: var(--text-primary, #f5f5f5);
+}
+
+.updates-version .mono {
+  font-family: "Consolas", monospace;
+  color: var(--text-secondary, #9a9a9a);
+}
+
+.updates-last {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted, #5a5a5a);
+  margin-top: 2px;
+}
+
+.updates-available {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: rgba(245, 165, 36, 0.08);
+  border: 1px solid rgba(245, 165, 36, 0.35);
+  border-radius: 8px;
+}
+
+.updates-available-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.updates-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.updates-notes {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.updates-notes summary {
+  cursor: pointer;
+  color: var(--text-secondary, #9a9a9a);
+  user-select: none;
+}
+
+.updates-notes pre {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 160px;
+  overflow-y: auto;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--text-secondary, #c0c0c0);
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--amber, #f5a524);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.update-notice {
+  position: fixed;
+  right: 20px;
+  bottom: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #1e1e1e;
+  border: 1px solid var(--amber, #f5a524);
+  border-left: 3px solid var(--amber, #f5a524);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  max-width: 420px;
+  animation: update-slide-in 0.35s ease-out;
+}
+
+@keyframes update-slide-in {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.update-notice-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+  background: var(--amber, #f5a524);
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.update-notice-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.update-notice-body strong {
+  font-size: 13px;
+  color: #f5f5f5;
+}
+
+.update-notice-body small {
+  font-size: 11px;
+  color: #9a9a9a;
+  font-family: "Consolas", monospace;
+}
+
+.update-notice-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.update-notice-actions .primary-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.update-notice-actions button:not(.primary-btn) {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: transparent;
+  color: #9a9a9a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.update-notice-actions button:not(.primary-btn):hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f5f5;
 }
 
 @media (max-width: 500px) {

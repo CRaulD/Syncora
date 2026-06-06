@@ -1,0 +1,304 @@
+{
+  "app": {
+    "name": "Syncora",
+    "tagline": "Sincroniza subtítulos sin complicación."
+  },
+  "tabs": {
+    "queue": "Cola",
+    "config": "Configuración"
+  },
+  "theme": {
+    "light": "Claro",
+    "dark": "Oscuro"
+  },
+  "queue": {
+    "sourceDir": "Carpeta de origen (vídeos + subtítulos)",
+    "outputDir": "Carpeta de salida",
+    "browse": "Examinar",
+    "scan": "Escanear",
+    "downloadAndSync": "Descargar y sincronizar",
+    "openOptions": "Abrir opciones",
+    "closeOptions": "Cerrar opciones",
+    "options": "Opciones",
+    "subfolders": "Subcarpetas",
+    "noSubfolders": "Sin subcarpetas",
+    "onlineSearch": "Búsqueda online",
+    "noOnlineSearch": "Sin búsqueda online",
+    "syncOn": "Sync on",
+    "downloadOnly": "Solo descarga",
+    "softsubOn": "Softsub on",
+    "softsubOff": "Softsub off",
+    "timeoutLabel": "Timeout {{seconds}}s",
+    "scanning": "Escaneando...",
+    "queueTitle": "Cola de procesamiento",
+    "all": "Todos",
+    "ready": "En espera",
+    "ok": "OK",
+    "skipped": "Saltados",
+    "failed": "Fallos",
+    "emptyTitle": "Aún no se escanearon vídeos",
+    "emptyHint": "Completa las carpetas arriba y haz clic en Escanear para armar la cola.",
+    "tableVideo": "Vídeo",
+    "tableProgress": "Progreso",
+    "tableActions": "Acciones",
+    "progressTitle": "Progreso general",
+    "statusReady": "Listo para escanear",
+    "queueCount": "{{count}} item(s) en la cola",
+    "timeRemainingZero": "Tiempo restante: 0 min",
+    "behavior": "Comportamiento",
+    "onlineSearchBehavior": "Búsqueda online",
+    "forceSearch": "Forzar búsqueda",
+    "syncAfterDownload": "Sincronizar después de descargar",
+    "forceResync": "Forzar resincronización",
+    "output": "Salida",
+    "keepSubfolders": "Mantener subcarpetas",
+    "embedSoftsub": "Incrustar softsub",
+    "defaultSubtitle": "Subtítulo por defecto",
+    "advanced": "Avanzado",
+    "timeout": "Timeout",
+    "retries": "Reintentos",
+    "track": "Pista",
+    "filterAria": "Filtros de la cola",
+    "emptyFilterTitle": "Sin items en este filtro",
+    "emptyFilterHint": "Cambia el filtro para ver los demás archivos de la cola.",
+    "reprocessFailed": "Reprocesar fallos",
+    "downloadOnlySubtitles": "Descargar subtítulos",
+    "total": "Total",
+    "completed": "Completados",
+    "showLog": "Mostrar log",
+    "hideLog": "Ocultar log"
+  },
+  "languages": {
+    "sectionTitle": "1. Idioma y fuentes",
+    "subtitleLanguage": "Idioma del subtítulo",
+    "interfaceLanguage": "Idioma de la interfaz"
+  },
+  "providers": {
+    "sectionTitle": "Proveedores de subtítulos",
+    "subsectionTitle": "Proveedores de subtítulos",
+    "noKey": "Sin clave",
+    "noApiKey": "Sin API key",
+    "savedKey": "Clave guardada",
+    "savedKeyMasked": "Clave guardada · {{masked}}",
+    "apiKeyLabel": "API key",
+    "apiKeyPlaceholder": "Pega la API key",
+    "apiKeySavedPlaceholder": "Clave guardada ({{masked}})",
+    "apiKeyShow": "Mostrar API key",
+    "apiKeyHide": "Ocultar API key",
+    "usernameOptional": "Usuario (opcional)",
+    "passwordOptional": "Contraseña (opcional)",
+    "usernamePlaceholder": "Tu usuario",
+    "usernameSavedPlaceholder": "Usuario guardado",
+    "passwordPlaceholder": "Pega la contraseña",
+    "passwordSavedPlaceholder": "Contraseña guardada",
+    "apiKeyRequiredHint": "API key obligatoria. Usuario y contraseña son opcionales y solo se usan para validar tu cuenta y límites de descarga.",
+    "subliminalNote": "Usa Subliminal con OpenSubtitles y Podnapisi. No requiere API key.",
+    "priority": "Prioridad",
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "save": "Guardar",
+    "testing": "Probando...",
+    "test": "Probar conexión",
+    "remove": "Quitar",
+    "add": "Agregar",
+    "loading": "Cargando",
+    "disabled": "Desactivado",
+    "failedChip": "Fallo",
+    "readyChip": "Listo",
+    "limitChip": "Límite",
+    "connectedChip": "Conectado",
+    "subliminalLegacy": "OpenSubtitles + Podnapisi legacy",
+    "connectionOkDownloadFailed": "Conexión OK, pero la descarga falló en la última prueba",
+    "dailyLimitReached": "Límite diario de descargas alcanzado",
+    "accountOk": "Cuenta OK",
+    "accountOkRemaining": "Cuenta OK · {{remaining}} restante(s)",
+    "apiKeyOkLoginNeeded": "API key OK · login requerido para descargar",
+    "apiKeyOk": "API key OK"
+  },
+  "tools": {
+    "sectionTitle": "Herramientas",
+    "sectionTitleNumbered": "2. Herramientas",
+    "depsStatus": "Estado de las dependencias",
+    "depsHint": "Las herramientas viven en la carpeta runtime de la app. Usa esta área para actualizar o reparar.",
+    "updateDeps": "Actualizar dependencias",
+    "updating": "Actualizando...",
+    "toolOk": "OK",
+    "toolOff": "OFF"
+  },
+  "setup": {
+    "title": "Preparar Syncora",
+    "subtitle": "Instala lo que falta para usar la app sin volver a la configuración después.",
+    "depsLabel": "Dependencias",
+    "downloadHint": "Descarga ALASS, FFmpeg y FFprobe para sincronizar e incrustar subtítulos.",
+    "explorerHint": "Agrega Abrir con Syncora, Descargar subtítulos y Descargar subtítulos y sincronizar.",
+    "depsMissing": "Dependencias no encontradas",
+    "installDeps": "Instalar dependencias",
+    "depsStatus": "Estado de las dependencias",
+    "skipForNow": "Omitir por ahora",
+    "downloadingDeps": "Descargando dependencias...",
+    "installingMenu": "Instalando menú...",
+    "installAll": "Instalar todo",
+    "downloadDeps": "Descargar dependencias",
+    "installExplorerMenu": "Instalar menú del Explorador",
+    "enterSyncora": "Entrar a Syncora",
+    "chipChecking": "Verificando",
+    "chipInstalled": "Instalado",
+    "chipRequired": "Necesario",
+    "chipSelected": "Seleccionado",
+    "chipOptional": "Opcional"
+  },
+  "explorer": {
+    "sectionTitle": "Integración con el Explorador",
+    "menuTitle": "Menú del Explorador",
+    "windowsIntegrationNumbered": "3. Integración de Windows",
+    "subtitle": "Agrega acciones al menú contextual de Windows para archivos de vídeo.",
+    "install": "Instalar",
+    "installing": "Instalando...",
+    "installIntegration": "Instalar integración",
+    "installingIntegration": "Instalando integración...",
+    "update": "Actualizar",
+    "updateIntegration": "Actualizar integración",
+    "uninstall": "Quitar",
+    "uninstalling": "Quitando...",
+    "removingIntegration": "Quitando integración...",
+    "installedChip": "Instalada",
+    "offChip": "Off",
+    "installedMessage": "Integración instalada."
+  },
+  "actions": {
+    "cancel": "Cancelar",
+    "cancelling": "Cancelando...",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "install": "Instalar",
+    "finish": "Finalizar",
+    "close": "Cerrar",
+    "open": "Abrir",
+    "save": "Guardar",
+    "search": "Buscar",
+    "retry": "Reintentar"
+  },
+  "status": {
+    "phaseReady": "Listo para escanear",
+    "phaseScanning": "Escaneando...",
+    "phaseSyncing": "Sincronizando...",
+    "phaseDone": "Completado",
+    "phasePaused": "Pausado"
+  },
+  "toast": {
+    "scanComplete": "Escaneo completo",
+    "downloadStarted": "Descarga iniciada",
+    "downloadComplete": "Descarga completa",
+    "backendOffline": "Backend sin conexión. Inicia el servidor local en el puerto 8765.",
+    "noSubtitleFound": "No se encontró subtítulo para este archivo en el idioma elegido.",
+    "backendOfflineShort": "Backend sin conexión"
+  },
+  "row": {
+    "video": "Vídeo",
+    "openFolder": "Abrir carpeta",
+    "copyPath": "Copiar ruta",
+    "subtitle": "Subtítulo",
+    "output": "Salida",
+    "info": "Info",
+    "waitingSync": "Esperando sincronización"
+  },
+  "log": {
+    "title": "Log",
+    "subtitle": "(última actividad)",
+    "clear": "Limpiar"
+  },
+  "phase": {
+    "readyToScan": "Listo para escanear",
+    "chooseFoldersHint": "Elige las carpetas y haz clic en Escanear para armar la cola.",
+    "readyToSync": "Listo para sincronizar",
+    "queueStats": "{{total}} vídeos encontrados, {{external}} con subtítulo externo, {{embedded}} con subtítulo incrustado, {{none}} sin subtítulo.",
+    "syncing": "Sincronizando {{done}}/{{total}}",
+    "processingQueue": "Procesando la cola con ALASS y dependencias configuradas.",
+    "doneWithFails": "Completado con {{fails}} fallo(s)",
+    "done": "Completado",
+    "doneStats": "{{ok}} completados, {{skip}} saltados, {{fail}} fallaron."
+  },
+  "errors": {
+    "sourceDirMissing": "La carpeta de origen no existe. Verifica la ruta seleccionada.",
+    "fillBothPaths": "Completa las carpetas de Origen y Salida.",
+    "alassNotFound": "No se encontró ALASS. Descarga las dependencias en la pestaña Configuración.",
+    "ffmpegNotFound": "No se encontró FFmpeg. Descarga las dependencias en la pestaña Configuración.",
+    "ffprobeNotFound": "No se encontró FFprobe. Descarga las dependencias en la pestaña Configuración."
+  },
+  "installer": {
+    "steps": {
+      "terms": "Términos",
+      "prepare": "Preparar",
+      "install": "Instalar",
+      "finish": "Finalizar",
+      "starting": "Iniciando."
+    },
+    "terms": {
+      "title": "Términos de Uso y Licencia",
+      "intro": "Antes de instalar, lea y acepte los términos siguientes.",
+      "body": [
+        "Syncora es un software libre y de código abierto, distribuido bajo la Licencia MIT. Puede usarlo, copiarlo, modificarlo y redistribuirlo según los términos de esa licencia.",
+        "La aplicación se proporciona “tal cual”, sin garantía de ningún tipo. El autor no se responsabiliza de daños, pérdida de datos o uso indebido.",
+        "ALASS, FFmpeg y FFprobe son proyectos de terceros con licencia GPL/LGPL. Al instalarlos, acepta los términos de sus respectivos autores.",
+        "Los datos de Syncora (cola, proveedores, registros) se almacenan localmente en su ordenador. No se envía nada a servidores externos sin su acción explícita (por ejemplo, descargar subtítulos).",
+        "La integración con el menú contextual de Windows modifica el Registro del usuario (HKCU) para registrar las acciones “Abrir con Syncora”, “Descargar subtítulos” y “Descargar subtítulos y sincronizar”.",
+        "Puede desinstalar todo en cualquier momento usando el acceso directo “Desinstalar Syncora” en el Menú Inicio."
+      ],
+      "accept": "He leído y acepto los términos anteriores"
+    },
+    "sidebar": {
+      "tagline": "Subtítulos sin fricción",
+      "description": "Instala Syncora, prepara las dependencias esenciales y puede añadir acciones rápidas al menú del Explorador."
+    },
+    "language": {
+      "label": "Idioma"
+    },
+    "prepare": {
+      "title": "Configura lo esencial antes de empezar.",
+      "subtitle": "Elige el destino y deja que el instalador prepare lo que la app necesita para descargar, sincronizar e incrustar subtítulos.",
+      "pathLabel": "Carpeta de instalación",
+      "changePath": "Cambiar"
+    },
+    "options": {
+      "deps": {
+        "title": "Dependencias",
+        "description": "ALASS, FFmpeg y FFprobe para sincronizar e incrustar softsub.",
+        "badge": "Necesario"
+      },
+      "explorer": {
+        "title": "Menú del Explorador",
+        "description": "Abrir con Syncora, Descargar subtítulos y Descargar y sincronizar.",
+        "badge": "Opcional"
+      }
+    },
+    "actions": {
+      "back": "Volver",
+      "install": "Instalar"
+    },
+    "install": {
+      "errorTitle": "Error de instalación"
+    },
+    "finish": {
+      "title": "¡Syncora instalado!",
+      "success": "Todo listo. Abre la app y configura tus proveedores de subtítulos.",
+      "withWarnings": "Instalación completada con advertencias. Revisa los registros si algo no funciona.",
+      "openApp": "Abrir Syncora"
+    }
+  },
+  "updates": {
+    "sectionTitle": "Actualizaciones",
+    "currentVersion": "Versión actual",
+    "checkNow": "Buscar actualizaciones",
+    "checking": "Buscando…",
+    "upToDate": "Estás al día con la versión más reciente.",
+    "updateAvailable": "Syncora {{version}} disponible",
+    "downloadUpdate": "Descargar actualización",
+    "later": "Más tarde",
+    "checkFailed": "Error al buscar actualizaciones.",
+    "retry": "Reintentar",
+    "lastChecked": "Última verificación: {{when}}",
+    "neverChecked": "Nunca verificado",
+    "notes": "Notas de la versión",
+    "openInGitHub": "Ver en GitHub"
+  }
+}
