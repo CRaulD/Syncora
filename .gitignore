@@ -37,6 +37,9 @@ _snapshots
 mockup-*.html
 *.bak-*
 smoke-test-*.exe
+Syncora-*-win-*.exe
+reddit-post-*.md
+release-notes-*.md
 
 # Editor directories and files
 .vscode/*

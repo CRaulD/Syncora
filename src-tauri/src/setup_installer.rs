@@ -884,28 +884,50 @@ pub fn run_uninstall() -> Result<(), String> {
         use winreg::enums::HKEY_CURRENT_USER;
         use winreg::RegKey;
 
-        if let Ok(hkcu) = RegKey::predef(HKEY_CURRENT_USER)
+        let hkcu_root = RegKey::predef(HKEY_CURRENT_USER);
+        let install_path: Option<PathBuf> = hkcu_root
             .open_subkey(REG_HKCU_BASE)
-            .and_then(|key| key.get_value::<String, _>(REG_INSTALL_PATH))
-        {
-            log::info!("Desinstalando de: {hkcu}");
+            .ok()
+            .and_then(|key| key.get_value::<String, _>(REG_INSTALL_PATH).ok())
+            .map(PathBuf::from);
 
-            super::uninstall_explorer_integration_native();
-
-            let _ = fs::remove_dir_all(&hkcu);
-
-            if let Some(local) = dirs::data_local_dir() {
-                let _ = fs::remove_file(local.join("app.syncora.desktop").join(".installed"));
+        match &install_path {
+            Some(path) => {
+                log::info!("Desinstalando de: {}", path.display());
+                super::uninstall_explorer_integration_native();
+                let _ = fs::remove_dir_all(path);
             }
-
-            let hkcu_root = RegKey::predef(HKEY_CURRENT_USER);
-            let _ = hkcu_root.delete_subkey_all(REG_UNINSTALL_KEY);
-            let _ = hkcu_root.delete_subkey_all(REG_HKCU_BASE);
-
-            log::info!("Desinstalacao concluida.");
-        } else {
-            log::warn!("Syncora nao esta instalado em HKCU\\Software\\Syncora.");
+            None => {
+                log::warn!("InstallPath nao encontrado no registro. Limpando orfaos.");
+                super::uninstall_explorer_integration_native();
+            }
         }
+
+        if let Some(local) = dirs::data_local_dir() {
+            let _ = fs::remove_file(local.join("app.syncora.desktop").join(".installed"));
+        }
+
+        let _ = hkcu_root.delete_subkey_all(REG_UNINSTALL_KEY);
+        let _ = hkcu_root.delete_subkey_all(REG_HKCU_BASE);
+
+        if let Some(runtime) = runtime_base_dir() {
+            let _ = fs::remove_dir_all(&runtime);
+        }
+
+        if let Some(desktop) = dirs::desktop_dir() {
+            let _ = fs::remove_file(desktop.join("Syncora.lnk"));
+        }
+        if let Some(appdata) = dirs::data_dir() {
+            let start_menu = appdata
+                .join("Microsoft")
+                .join("Windows")
+                .join("Start Menu")
+                .join("Programs")
+                .join("Syncora");
+            let _ = fs::remove_dir_all(&start_menu);
+        }
+
+        log::info!("Desinstalacao concluida.");
     }
 
     Ok(())
