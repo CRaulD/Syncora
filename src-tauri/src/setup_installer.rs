@@ -791,9 +791,6 @@ fn mark_as_installed(app: &AppHandle, install_path: &Path) -> Result<(), Box<dyn
 
 #[tauri::command]
 pub async fn launch_main_app(app: AppHandle) -> Result<(), String> {
-    if let Some(setup_win) = app.get_webview_window("setup") {
-        let _ = setup_win.close();
-    }
     if app.get_webview_window("main").is_none() {
         tauri::WebviewWindowBuilder::new(
             &app,
@@ -810,9 +807,13 @@ pub async fn launch_main_app(app: AppHandle) -> Result<(), String> {
         .build()
         .map_err(|e| format!("Falha ao abrir Syncora: {e}"))?;
         super::start_backend_if_needed(&app);
-    } else if let Some(main_win) = app.get_webview_window("main") {
+    }
+    if let Some(main_win) = app.get_webview_window("main") {
         let _ = main_win.show();
         let _ = main_win.set_focus();
+    }
+    if let Some(setup_win) = app.get_webview_window("setup") {
+        let _ = setup_win.close();
     }
     Ok(())
 }
