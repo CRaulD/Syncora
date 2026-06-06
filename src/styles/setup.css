@@ -489,6 +489,15 @@ body,
   font-variant-numeric: tabular-nums;
 }
 
+.install-detail {
+  font-size: 13px;
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+  margin-top: -4px;
+  margin-bottom: 4px;
+  min-height: 18px;
+}
+
 .finish-icon {
   color: var(--amber);
   margin-bottom: 8px;

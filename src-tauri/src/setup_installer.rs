@@ -6,13 +6,16 @@
 
 use std::env;
 use std::fs;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::time::Duration;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tauri::{AppHandle, Emitter, Manager};
 
 #[cfg(target_os = "windows")]
@@ -27,6 +30,23 @@ const REG_UNINSTALL_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Unin
 const DEFAULT_INSTALL_DIR: &str = "Syncora";
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+// Resources embedded into the binary at compile time.
+// These replace the old `bundle.resources` approach and make `syncora.exe`
+// truly self-contained. The install wizard extracts them to the install dir.
+const BACKEND_EXE_BYTES: &[u8] =
+    include_bytes!("../../backend/dist/syncora-backend.exe");
+const HELPER_EXE_BYTES: &[u8] =
+    include_bytes!("../target/release/syncora-open.exe");
+const ICON_ICO_BYTES: &[u8] = include_bytes!("../icons/icon.ico");
+const ICON_32_BYTES: &[u8] = include_bytes!("../icons/32x32.png");
+const ICON_128_BYTES: &[u8] = include_bytes!("../icons/128x128.png");
+const ICON_128_2X_BYTES: &[u8] = include_bytes!("../icons/128x128@2x.png");
+
+const RUNTIME_DIR_NAME: &str = "Syncora";
+const RUNTIME_SUBDIR: &str = "runtime";
+const HTTP_TIMEOUT_SECS: u64 = 30;
+const DOWNLOAD_TIMEOUT_SECS: u64 = 300;
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct InstallOptions {
     #[serde(rename = "installDeps")]
@@ -40,20 +60,44 @@ pub struct InstallOptions {
 #[derive(Debug, Serialize, Clone)]
 pub struct InstallProgress {
     pub step: String,
+    pub step_key: Option<String>,
     pub pct: u8,
     pub done: bool,
     pub error: Option<String>,
+    pub detail: Option<String>,
 }
 
 impl InstallProgress {
-    fn emit(app: &AppHandle, step: &str, pct: u8, done: bool, error: Option<String>) {
+    #[allow(dead_code)]
+    fn emit(
+        app: &AppHandle,
+        step: &str,
+        pct: u8,
+        done: bool,
+        error: Option<String>,
+        detail: Option<String>,
+    ) {
+        Self::emit_keyed(app, step, None, pct, done, error, detail);
+    }
+
+    fn emit_keyed(
+        app: &AppHandle,
+        step: &str,
+        step_key: Option<&str>,
+        pct: u8,
+        done: bool,
+        error: Option<String>,
+        detail: Option<String>,
+    ) {
         let _ = app.emit(
             "install-progress",
             InstallProgress {
                 step: step.to_string(),
+                step_key: step_key.map(str::to_string),
                 pct,
                 done,
                 error,
+                detail,
             },
         );
     }
@@ -110,7 +154,15 @@ pub async fn start_install(app: AppHandle, opts: InstallOptions) -> Result<(), S
         if let Err(e) = run_install(&app_clone, &opts_clone) {
             let msg = e.to_string();
             log::error!("Falha na instalacao: {msg}");
-            InstallProgress::emit(&app_clone, "Erro", 0, true, Some(msg));
+            InstallProgress::emit_keyed(
+                &app_clone,
+                "Erro na instalacao",
+                Some("installer.progressSteps.error"),
+                0,
+                true,
+                Some(msg),
+                None,
+            );
         }
     });
 
@@ -124,81 +176,479 @@ fn run_install(app: &AppHandle, opts: &InstallOptions) -> Result<(), Box<dyn std
         return Err("Caminho de instalacao vazio.".into());
     }
 
-    InstallProgress::emit(app, "Validando caminho de instalacao...", 5, false, None);
-    validate_install_path_inner(&install_path).map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+    kill_running_syncora();
 
-    InstallProgress::emit(app, "Criando pasta de instalacao...", 10, false, None);
+    InstallProgress::emit_keyed(
+        app,
+        "Validando caminho de instalacao...",
+        Some("installer.progressSteps.validating"),
+        5,
+        false,
+        None,
+        None,
+    );
+    validate_install_path_inner(&install_path)
+        .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+
+    InstallProgress::emit_keyed(
+        app,
+        "Criando pasta de instalacao...",
+        Some("installer.progressSteps.creatingDir"),
+        10,
+        false,
+        None,
+        None,
+    );
     fs::create_dir_all(&install_path)?;
 
-    InstallProgress::emit(app, "Copiando arquivos...", 25, false, None);
+    InstallProgress::emit_keyed(
+        app,
+        "Copiando arquivos...",
+        Some("installer.progressSteps.copyingFiles"),
+        18,
+        false,
+        None,
+        None,
+    );
     copy_app_files(app, &install_path)?;
 
     if opts.install_deps {
-        InstallProgress::emit(app, "Preparando dependencias...", 45, false, None);
-        // Dependencias (ALASS/FFmpeg/FFprobe) sao baixadas pelo app na primeira
-        // execucao via backend em %LocalAppData%\Syncora\bin. Nenhuma acao aqui.
+        let app_for_alass = app.clone();
+        match install_alass(|step, step_key, pct, detail| {
+            InstallProgress::emit_keyed(
+                &app_for_alass,
+                step,
+                Some(step_key),
+                pct,
+                false,
+                None,
+                detail.map(str::to_string),
+            );
+        }) {
+            Ok(_) => {
+                InstallProgress::emit_keyed(
+                    app,
+                    "Extraindo ALASS...",
+                    Some("installer.progressSteps.extractingAlass"),
+                    40,
+                    false,
+                    None,
+                    None,
+                );
+            }
+            Err(e) => {
+                log::warn!("Falha ao instalar ALASS: {e}");
+                InstallProgress::emit_keyed(
+                    app,
+                    "ALASS sera baixado no primeiro uso",
+                    Some("installer.progressSteps.alassDeferred"),
+                    40,
+                    false,
+                    None,
+                    Some(e),
+                );
+            }
+        }
+
+        let app_for_ffmpeg = app.clone();
+        match install_ffmpeg(|step, step_key, pct, detail| {
+            InstallProgress::emit_keyed(
+                &app_for_ffmpeg,
+                step,
+                Some(step_key),
+                pct,
+                false,
+                None,
+                detail.map(str::to_string),
+            );
+        }) {
+            Ok(_) => {
+                InstallProgress::emit_keyed(
+                    app,
+                    "Extraindo FFmpeg...",
+                    Some("installer.progressSteps.extractingFfmpeg"),
+                    85,
+                    false,
+                    None,
+                    None,
+                );
+            }
+            Err(e) => {
+                log::warn!("Falha ao instalar FFmpeg: {e}");
+                InstallProgress::emit_keyed(
+                    app,
+                    "FFmpeg sera baixado no primeiro uso",
+                    Some("installer.progressSteps.ffmpegDeferred"),
+                    85,
+                    false,
+                    None,
+                    Some(e),
+                );
+            }
+        }
     }
 
-    InstallProgress::emit(app, "Criando atalhos...", 65, false, None);
+    InstallProgress::emit_keyed(
+        app,
+        "Criando atalhos...",
+        Some("installer.progressSteps.creatingShortcuts"),
+        90,
+        false,
+        None,
+        None,
+    );
     create_shortcuts(&install_path)?;
 
-    InstallProgress::emit(app, "Registrando no sistema...", 80, false, None);
+    InstallProgress::emit_keyed(
+        app,
+        "Registrando no sistema...",
+        Some("installer.progressSteps.registering"),
+        95,
+        false,
+        None,
+        None,
+    );
     register_uninstaller(&install_path)?;
     mark_as_installed(app, &install_path)?;
 
     if opts.install_explorer {
-        InstallProgress::emit(app, "Instalando menu do Explorer...", 90, false, None);
+        InstallProgress::emit_keyed(
+            app,
+            "Instalando menu do Explorer...",
+            Some("installer.progressSteps.installingExplorer"),
+            98,
+            false,
+            None,
+            None,
+        );
         if let Err(e) = super::install_explorer_integration_native() {
             log::warn!("Falha na integracao com Explorer: {e}");
         }
     }
 
-    InstallProgress::emit(app, "Concluido!", 100, true, None);
+    InstallProgress::emit_keyed(
+        app,
+        "Concluido!",
+        Some("installer.progressSteps.completed"),
+        100,
+        true,
+        None,
+        None,
+    );
     Ok(())
 }
 
 fn copy_app_files(app: &AppHandle, dest: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    let _ = app;
     let exe_path = std::env::current_exe()?;
-    let exe_dir = exe_path
-        .parent()
-        .ok_or("Nao foi possivel determinar o diretorio do executavel.")?;
-
     let exe_dest = dest.join("Syncora.exe");
-    fs::copy(&exe_path, &exe_dest)
-        .map_err(|e| format!("Falha ao copiar Syncora.exe: {e}"))?;
+    fs::copy(&exe_path, &exe_dest).map_err(|e| format!("Falha ao copiar Syncora.exe: {e}"))?;
 
-    let helper_src = exe_dir.join("syncora-open.exe");
     let helper_dest = dest.join("syncora-open.exe");
-    if helper_src.is_file() {
-        fs::copy(&helper_src, &helper_dest)
-            .map_err(|e| format!("Falha ao copiar syncora-open.exe: {e}"))?;
-    } else {
-        log::warn!("syncora-open.exe nao encontrado em {}", helper_src.display());
+    write_bytes(&helper_dest, HELPER_EXE_BYTES)
+        .map_err(|e| format!("Falha ao extrair syncora-open.exe: {e}"))?;
+
+    let backend_dest_dir = dest.join("backend");
+    fs::create_dir_all(&backend_dest_dir)?;
+    let backend_dest = backend_dest_dir.join("syncora-backend.exe");
+    write_bytes(&backend_dest, BACKEND_EXE_BYTES)
+        .map_err(|e| format!("Falha ao extrair syncora-backend.exe: {e}"))?;
+
+    let icons_dest_dir = dest.join("icons");
+    fs::create_dir_all(&icons_dest_dir)?;
+    write_bytes(&icons_dest_dir.join("icon.ico"), ICON_ICO_BYTES)?;
+    write_bytes(&icons_dest_dir.join("32x32.png"), ICON_32_BYTES)?;
+    write_bytes(&icons_dest_dir.join("128x128.png"), ICON_128_BYTES)?;
+    write_bytes(
+        &icons_dest_dir.join("128x128@2x.png"),
+        ICON_128_2X_BYTES,
+    )?;
+
+    Ok(())
+}
+
+fn write_bytes(dest: &Path, bytes: &[u8]) -> Result<(), String> {
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("mkdir {}: {e}", parent.display()))?;
     }
+    fs::write(dest, bytes).map_err(|e| format!("write {}: {e}", dest.display()))?;
+    Ok(())
+}
 
-    if let Ok(resource_dir) = app.path().resource_dir() {
-        let backend_src = resource_dir.join("backend").join("syncora-backend.exe");
-        if backend_src.is_file() {
-            let backend_dest = dest.join("backend").join("syncora-backend.exe");
-            if let Some(parent) = backend_dest.parent() {
-                fs::create_dir_all(parent)?;
-            }
-            fs::copy(&backend_src, &backend_dest)
-                .map_err(|e| format!("Falha ao copiar backend: {e}"))?;
+fn runtime_base_dir() -> Option<PathBuf> {
+    if let Some(local_app_data) = env::var_os("LOCALAPPDATA") {
+        return Some(PathBuf::from(local_app_data).join(RUNTIME_DIR_NAME));
+    }
+    if let Some(home) = dirs::home_dir() {
+        return Some(home.join("AppData").join("Local").join(RUNTIME_DIR_NAME));
+    }
+    None
+}
+
+fn runtime_dir() -> Option<PathBuf> {
+    runtime_base_dir().map(|p| p.join(RUNTIME_SUBDIR))
+}
+
+fn read_manifest() -> serde_json::Value {
+    let Some(rd) = runtime_dir() else {
+        return json!({});
+    };
+    let path = rd.join("manifest.json");
+    fs::read_to_string(&path)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_else(|| json!({}))
+}
+
+fn write_manifest(manifest: &serde_json::Value) -> Result<(), String> {
+    let Some(rd) = runtime_dir() else {
+        return Err("LOCALAPPDATA nao definido".into());
+    };
+    fs::create_dir_all(&rd).map_err(|e| format!("mkdir runtime: {e}"))?;
+    let path = rd.join("manifest.json");
+    let text = serde_json::to_string_pretty(manifest)
+        .map_err(|e| format!("serialize manifest: {e}"))?;
+    fs::write(&path, text).map_err(|e| format!("write manifest: {e}"))?;
+    Ok(())
+}
+
+fn kill_running_syncora() {
+    #[cfg(target_os = "windows")]
+    {
+        let script = "Get-Process -Name 'syncora','syncora-backend','syncora-open' -ErrorAction SilentlyContinue | Stop-Process -Force";
+        let mut cmd = Command::new("powershell");
+        cmd.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script]);
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        let _ = cmd.output();
+    }
+    std::thread::sleep(Duration::from_millis(800));
+}
+
+fn download_with_progress<F>(url: &str, dest: &Path, on_progress: F) -> Result<u64, String>
+where
+    F: Fn(u64, Option<u64>),
+{
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(DOWNLOAD_TIMEOUT_SECS))
+        .user_agent(concat!("Syncora/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .map_err(|e| format!("http client: {e}"))?;
+
+    let mut response = client
+        .get(url)
+        .send()
+        .map_err(|e| format!("GET {url}: {e}"))?;
+    if !response.status().is_success() {
+        return Err(format!(
+            "GET {url}: HTTP {}",
+            response.status().as_u16()
+        ));
+    }
+    let total = response.content_length();
+
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("mkdir {}: {e}", parent.display()))?;
+    }
+    let mut file = fs::File::create(dest).map_err(|e| format!("create {}: {e}", dest.display()))?;
+
+    let mut received: u64 = 0;
+    let mut buffer = [0u8; 64 * 1024];
+    loop {
+        let n = response
+            .read(&mut buffer)
+            .map_err(|e| format!("read body: {e}"))?;
+        if n == 0 {
+            break;
         }
+        file.write_all(&buffer[..n])
+            .map_err(|e| format!("write body: {e}"))?;
+        received += n as u64;
+        on_progress(received, total);
+    }
+    file.flush().map_err(|e| format!("flush: {e}"))?;
+    Ok(received)
+}
 
-        for icon_name in ["icon.ico", "32x32.png", "128x128.png", "128x128@2x.png"] {
-            let icon_src = resource_dir.join("icons").join(icon_name);
-            if icon_src.is_file() {
-                let icon_dest = dest.join("icons").join(icon_name);
-                if let Some(parent) = icon_dest.parent() {
-                    fs::create_dir_all(parent)?;
-                }
-                let _ = fs::copy(&icon_src, &icon_dest);
+fn fetch_release_info(api_url: &str) -> Result<(String, Vec<serde_json::Value>), String> {
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(HTTP_TIMEOUT_SECS))
+        .user_agent(concat!("Syncora/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .map_err(|e| format!("http client: {e}"))?;
+    let response = client
+        .get(api_url)
+        .send()
+        .map_err(|e| format!("GET {api_url}: {e}"))?;
+    if !response.status().is_success() {
+        return Err(format!(
+            "GET {api_url}: HTTP {}",
+            response.status().as_u16()
+        ));
+    }
+    let json: serde_json::Value = response
+        .json()
+        .map_err(|e| format!("decode release json: {e}"))?;
+    let tag = json
+        .get("tag_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_string();
+    let assets = json
+        .get("assets")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    Ok((tag, assets))
+}
+
+fn pick_asset(assets: &[serde_json::Value], name_predicate: &dyn Fn(&str) -> bool) -> Option<String> {
+    for asset in assets {
+        let name = asset.get("name").and_then(|v| v.as_str()).unwrap_or("");
+        if name_predicate(name) {
+            if let Some(url) = asset.get("browser_download_url").and_then(|v| v.as_str()) {
+                return Some(url.to_string());
             }
         }
     }
+    None
+}
 
+fn install_alass<F>(on_step: F) -> Result<(), String>
+where
+    F: Fn(&str, &str, u8, Option<&str>),
+{
+    let (tag, assets) = fetch_release_info(
+        "https://api.github.com/repos/kaegi/alass/releases/latest",
+    )?;
+    let url = pick_asset(&assets, &|name| {
+        let lower = name.to_ascii_lowercase();
+        lower.contains("windows64") && lower.ends_with(".zip")
+    })
+    .ok_or_else(|| "Asset windows64.zip do ALASS nao encontrado".to_string())?;
+
+    let Some(rd) = runtime_dir() else {
+        return Err("LOCALAPPDATA nao definido".into());
+    };
+    let out_dir = rd.join("alass");
+    fs::create_dir_all(&out_dir).map_err(|e| format!("mkdir alass: {e}"))?;
+
+    let tmp = std::env::temp_dir().join(format!("syncora-alass-{}.zip", std::process::id()));
+    let bytes = download_with_progress(&url, &tmp, |received, total| {
+        let mib_received = received / (1024 * 1024);
+        let mib_total = total.map(|t| t / (1024 * 1024));
+        on_step(
+            "Baixando ALASS",
+            "installer.progressSteps.downloadingAlass",
+            35,
+            Some(&format!("{} MB / {} MB", mib_received, mib_total.unwrap_or(0))),
+        );
+    })?;
+    log::info!("ALASS zip baixado: {} bytes", bytes);
+
+    let file = fs::File::open(&tmp).map_err(|e| format!("open zip: {e}"))?;
+    let mut zip = zip::ZipArchive::new(file).map_err(|e| format!("ler zip: {e}"))?;
+    let mut extracted_path: Option<PathBuf> = None;
+    for i in 0..zip.len() {
+        let mut entry = zip.by_index(i).map_err(|e| format!("entry {i}: {e}"))?;
+        let name = entry.name().to_ascii_lowercase();
+        if name.ends_with("alass-cli.exe") || name.ends_with("alass.exe") {
+            let dest = out_dir.join("alass-cli.exe");
+            let mut out = fs::File::create(&dest).map_err(|e| format!("create alass-cli: {e}"))?;
+            std::io::copy(&mut entry, &mut out).map_err(|e| format!("copy alass-cli: {e}"))?;
+            extracted_path = Some(dest);
+            break;
+        }
+    }
+    let _ = fs::remove_file(&tmp);
+    let Some(exe) = extracted_path else {
+        return Err("alass-cli.exe nao encontrado no zip".into());
+    };
+    log::info!("ALASS extraido para {}", exe.display());
+
+    let mut manifest = read_manifest();
+    manifest["alass"] = json!({
+        "version": tag,
+        "path": exe.to_string_lossy(),
+        "installed_by": "installer",
+    });
+    write_manifest(&manifest)?;
+    Ok(())
+}
+
+fn install_ffmpeg<F>(on_step: F) -> Result<(), String>
+where
+    F: Fn(&str, &str, u8, Option<&str>),
+{
+    let (tag, assets) = fetch_release_info(
+        "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest",
+    )?;
+    let url = pick_asset(&assets, &|name| {
+        let lower = name.to_ascii_lowercase();
+        lower.contains("win64")
+            && lower.contains("lgpl-shared")
+            && lower.ends_with(".zip")
+    })
+    .ok_or_else(|| "Asset win64-lgpl-shared.zip do FFmpeg nao encontrado".to_string())?;
+
+    let Some(rd) = runtime_dir() else {
+        return Err("LOCALAPPDATA nao definido".into());
+    };
+    let out_dir = rd.join("ffmpeg");
+    fs::create_dir_all(&out_dir).map_err(|e| format!("mkdir ffmpeg: {e}"))?;
+
+    let tmp = std::env::temp_dir().join(format!("syncora-ffmpeg-{}.zip", std::process::id()));
+    let bytes = download_with_progress(&url, &tmp, |received, total| {
+        let mib_received = received / (1024 * 1024);
+        let mib_total = total.map(|t| t / (1024 * 1024));
+        on_step(
+            "Baixando FFmpeg",
+            "installer.progressSteps.downloadingFfmpeg",
+            60,
+            Some(&format!("{} MB / {} MB", mib_received, mib_total.unwrap_or(0))),
+        );
+    })?;
+    log::info!("FFmpeg zip baixado: {} bytes", bytes);
+
+    let file = fs::File::open(&tmp).map_err(|e| format!("open zip: {e}"))?;
+    let mut zip = zip::ZipArchive::new(file).map_err(|e| format!("ler zip: {e}"))?;
+    let mut ffmpeg_ok = false;
+    let mut ffprobe_ok = false;
+    for i in 0..zip.len() {
+        let mut entry = zip.by_index(i).map_err(|e| format!("entry {i}: {e}"))?;
+        let raw_name = entry.name().replace('\\', "/");
+        if !raw_name.to_ascii_lowercase().contains("/bin/") {
+            continue;
+        }
+        let filename = Path::new(&raw_name)
+            .file_name()
+            .map(|f| f.to_string_lossy().to_string())
+            .unwrap_or_default();
+        if !filename.ends_with(".exe") && !filename.ends_with(".dll") {
+            continue;
+        }
+        let dest = out_dir.join(&filename);
+        let mut out = fs::File::create(&dest).map_err(|e| format!("create {filename}: {e}"))?;
+        std::io::copy(&mut entry, &mut out).map_err(|e| format!("copy {filename}: {e}"))?;
+        if filename.eq_ignore_ascii_case("ffmpeg.exe") {
+            ffmpeg_ok = true;
+        }
+        if filename.eq_ignore_ascii_case("ffprobe.exe") {
+            ffprobe_ok = true;
+        }
+    }
+    let _ = fs::remove_file(&tmp);
+    if !ffmpeg_ok || !ffprobe_ok {
+        return Err("ffmpeg/ffprobe nao encontrados no zip".into());
+    }
+    log::info!("FFmpeg extraido em {}", out_dir.display());
+
+    let mut manifest = read_manifest();
+    manifest["ffmpeg"] = json!({
+        "version": tag,
+        "path": out_dir.join("ffmpeg.exe").to_string_lossy(),
+        "installed_by": "installer",
+    });
+    write_manifest(&manifest)?;
     Ok(())
 }
 
@@ -476,6 +926,9 @@ fn read_install_path_from_registry() -> Option<PathBuf> {
 fn build_uninstall_powershell_script(install_path: &Path, local_data: &Path) -> String {
     let path = install_path.to_string_lossy().replace('\'', "''");
     let local = local_data.to_string_lossy().replace('\'', "''");
+    let runtime = runtime_base_dir()
+        .map(|p| p.to_string_lossy().replace('\'', "''").to_string())
+        .unwrap_or_else(|| r"%LOCALAPPDATA%\Syncora".to_string());
     format!(
         r#"
         Start-Sleep -Seconds 2
@@ -484,6 +937,7 @@ fn build_uninstall_powershell_script(install_path: &Path, local_data: &Path) -> 
         $ErrorActionPreference = 'SilentlyContinue'
         Remove-Item -LiteralPath '{path}' -Recurse -Force
         Remove-Item -LiteralPath '{local}\.installed' -Force
+        Remove-Item -LiteralPath '{runtime}' -Recurse -Force
         Remove-Item -LiteralPath 'HKCU:\Software\Syncora' -Recurse -Force
         Remove-Item -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Syncora' -Recurse -Force
         $desktop = [Environment]::GetFolderPath('Desktop')
@@ -493,6 +947,7 @@ fn build_uninstall_powershell_script(install_path: &Path, local_data: &Path) -> 
         "#,
         path = path,
         local = local,
+        runtime = runtime,
     )
 }
 

@@ -2,6 +2,32 @@
 
 Todas as mudanças notáveis neste projeto são documentadas aqui. O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+> 🌐 **Idioma:** [English](CHANGELOG.md) · **Português (BR)**
+
+## [0.1.1-beta] - 2026-06-06
+
+### Corrigido
+- **Bug crítico na `v0.1.0-beta`**: o instalador nunca copiava `syncora-backend.exe`, `syncora-open.exe` nem os ícones para a pasta de instalação. O assistente terminava com sucesso, mas na primeira execução o app mostrava "Backend offline" porque o backend, helper e ícones nunca tinham sido instalados. A nova build embarca tudo dentro do `syncora.exe` via `include_bytes!` e grava na pasta de instalação na hora de instalar, então eles estão sempre lá.
+
+### Adicionado
+- **Embed single-binary** do backend, helper do Explorer e todos os ícones. O `syncora.exe` não depende mais do `bundle.resources` estar no caminho certo; tudo viaja dentro do binário.
+- **Download na instalação** das duas dependências externas, com fallback gracioso se a rede estiver offline:
+  - **ALASS** (CLI de resync de legendas, ~26 MB) de `github.com/kaegi/alass/releases/download/v2.0.0/alass-windows64.zip`.
+  - **FFmpeg + FFprobe** (~88 MB) de `github.com/BtbN/FFmpeg-Builds/releases/latest/ffmpeg-master-latest-win64-lgpl-shared.zip`.
+  - Os dois são baixados direto para `%LOCALAPPDATA%\Syncora\runtime\` e um `manifest.json` é gravado pra o app poder detectar e atualizar depois.
+- **Progresso de instalação em 10 etapas** com progresso de download a nível de bytes (ex. "13 MB / 26 MB") para o assistente não parecer travado em downloads grandes. Todos os rótulos de etapa são traduzidos em pt-BR, en e es.
+- **Segurança de reinstalação**: `run_install` agora mata qualquer processo `syncora`, `syncora-backend` ou `syncora-open` em execução antes de sobrescrever arquivos, eliminando o `os error 32` quando o usuário tenta reinstalar com a build anterior ainda aberta.
+- **Manifest** em `%LOCALAPPDATA%\Syncora\runtime\manifest.json` registra versão, caminho de instalação e instalador de cada dependência.
+
+### Mudado
+- **Build script** (`npm run build:syncora`) agora compila o helper Rust (`syncora-open.exe`) antes do `tauri build` principal, para que `include_bytes!("../target/release/syncora-open.exe")` resolva na hora do build.
+- **Desinstalação** agora também remove `%LOCALAPPDATA%\Syncora\runtime\` (o ALASS + FFmpeg + manifest baixados), não deixando arquivos para trás.
+- **Descoberta do backend**: `find_backend_exe` agora tenta `exe_dir/backend/syncora-backend.exe` primeiro, então o layout de instalação embarcado é encontrado sem nenhuma mexida em ambiente.
+
+### Corrigido
+- **Botão "Remover" do Explorer sempre desabilitado**: a condição de `disabled` checava um estado busy `"uninstall"` que não existia, então o botão nunca era clicável. Agora checa `explorerBusy !== "idle"` corretamente e funciona como deveria.
+- **Progresso de instalação travado no download**: o fluxo antigo de 4 etapas não tinha atualização por bytes durante downloads, fazendo a barra parecer congelada; o novo fluxo emite progresso em chunks de 64 KB.
+
 ## [0.1.0-beta] - 2026-06-06
 
 ### Added

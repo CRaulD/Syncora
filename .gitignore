@@ -36,6 +36,7 @@ backend/**/*.pyo
 _snapshots
 mockup-*.html
 *.bak-*
+smoke-test-*.exe
 
 # Editor directories and files
 .vscode/*

@@ -1,6 +1,6 @@
 [package]
 name = "syncora"
-version = "0.1.0-beta"
+version = "0.1.1-beta"
 description = "Syncora desktop app"
 authors = ["Syncora"]
 license = "MIT"
@@ -26,8 +26,10 @@ tauri = { version = "2.11.2", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-shell = "2"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "blocking"] }
 semver = "1"
+zip = "2"
+tempfile = "3"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

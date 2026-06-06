@@ -1954,7 +1954,7 @@ export default function App() {
           </button>
           <button
             onClick={() => void runExplorerIntegration("uninstall")}
-            disabled={explorerBusy !== "uninstall" || !explorerStatus?.installed}
+            disabled={explorerBusy !== "idle" || !explorerStatus?.installed}
           >
             {explorerBusy === "uninstall" ? t("explorer.uninstalling") : t("explorer.uninstall")}
           </button>

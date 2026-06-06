@@ -120,6 +120,7 @@ fn candidate_backend_exes(app: &tauri::App) -> Vec<PathBuf> {
 
     if let Ok(exe) = env::current_exe() {
         if let Some(exe_dir) = exe.parent() {
+            candidates.push(exe_dir.join("backend").join("syncora-backend.exe"));
             candidates.push(exe_dir.join("syncora-backend.exe"));
             candidates.push(exe_dir.join("..").join("syncora-backend.exe"));
             candidates.push(exe_dir.join("..").join("..").join("syncora-backend.exe"));

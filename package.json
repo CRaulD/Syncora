@@ -9,7 +9,7 @@
     "build:frontend": "tsc -b && vite build",
     "build:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-backend.ps1",
     "build:release": "npm run build:backend && npm run build:frontend",
-    "build:syncora": "npm run build:backend && npm run build:frontend && tauri build --no-bundle",
+    "build:syncora": "npm run build:backend && npm run build:frontend && cargo build --manifest-path src-tauri/Cargo.toml --release --bin syncora-open && tauri build --no-bundle",
     "inno:build": "echo [DEPRECATED] Use 'npm run build:syncora' (single-binary Tauri installer). && exit 0",
     "lint": "eslint .",
     "preview": "vite preview",

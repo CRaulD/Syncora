@@ -14,9 +14,11 @@ interface InstallOptions {
 
 interface InstallProgress {
   step: string;
+  step_key: string | null;
   pct: number;
   done: boolean;
   error: string | null;
+  detail: string | null;
 }
 
 const SUPPORTED_LANGS = [
@@ -37,9 +39,11 @@ export default function SetupWizard() {
   const [pathError, setPathError] = useState<string | null>(null);
   const [progress, setProgress] = useState<InstallProgress>({
     step: "",
+    step_key: null,
     pct: 0,
     done: false,
     error: null,
+    detail: null,
   });
 
   useEffect(() => {
@@ -99,7 +103,7 @@ export default function SetupWizard() {
       return;
     }
     setStep("install");
-    setProgress({ step: t("installer.steps.starting"), pct: 0, done: false, error: null });
+    setProgress({ step: t("installer.steps.starting"), step_key: null, pct: 0, done: false, error: null, detail: null });
     try {
       await invoke("start_install", { opts });
     } catch (e: unknown) {
@@ -401,6 +405,11 @@ interface InstallPageProps {
 }
 
 function InstallPage({ progress, t }: InstallPageProps) {
+  const translatedStep = progress.step_key ? t(progress.step_key) : progress.step;
+  const displayStep =
+    translatedStep && translatedStep !== progress.step_key
+      ? translatedStep
+      : progress.step;
   return (
     <div className="page page--centered">
       {progress.error ? (
@@ -424,7 +433,10 @@ function InstallPage({ progress, t }: InstallPageProps) {
           <div className="install-icon">
             <SpinnerIcon />
           </div>
-          <h2 className="install-title">{progress.step}</h2>
+          <h2 className="install-title">{displayStep}</h2>
+          {progress.detail && (
+            <p className="install-detail">{progress.detail}</p>
+          )}
           <div className="progress-track">
             <div
               className="progress-fill"

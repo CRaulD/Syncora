@@ -98,7 +98,7 @@
     "hide": "Hide",
     "save": "Save",
     "testing": "Testing...",
-    "test": "Test connection",
+    "test": "Test",
     "remove": "Remove",
     "add": "Add",
     "loading": "Loading",
@@ -231,7 +231,23 @@
       "prepare": "Prepare",
       "install": "Install",
       "finish": "Finish",
-      "starting": "Starting."
+      "starting": "Starting…"
+    },
+    "progressSteps": {
+      "validating": "Validating install path…",
+      "creatingDir": "Creating install folder…",
+      "copyingFiles": "Copying files…",
+      "downloadingAlass": "Downloading ALASS…",
+      "extractingAlass": "Extracting ALASS…",
+      "alassDeferred": "ALASS will be downloaded on first use",
+      "downloadingFfmpeg": "Downloading FFmpeg…",
+      "extractingFfmpeg": "Extracting FFmpeg…",
+      "ffmpegDeferred": "FFmpeg will be downloaded on first use",
+      "creatingShortcuts": "Creating shortcuts…",
+      "registering": "Registering with the system…",
+      "installingExplorer": "Installing Explorer menu…",
+      "completed": "Done!",
+      "error": "Install error"
     },
     "terms": {
       "title": "Terms of Use and License",

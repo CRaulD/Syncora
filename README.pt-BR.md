@@ -17,6 +17,10 @@
   <a href="https://github.com/CRaulD/Syncora/releases"><img src="https://img.shields.io/badge/download-Windows%20Installer-success.svg" alt="Download" /></a>
 </p>
 
+<p align="center">
+  <strong>🌐 Idioma:</strong> <a href="README.md">English</a> · <strong>Português (BR)</strong>
+</p>
+
 ---
 
 ## Visão geral
