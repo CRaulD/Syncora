@@ -10,7 +10,7 @@
     "build:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-backend.ps1",
     "installer:assets": "node scripts/generate-nsis-assets.mjs",
     "build:release": "npm run installer:assets && npm run build:backend && npm run build:frontend",
-    "inno:build": "npm run build:release && cargo build --manifest-path src-tauri/Cargo.toml --release && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-inno-installer.ps1",
+    "inno:build": "tauri build --no-bundle && cargo build --manifest-path src-tauri/Cargo.toml --bin syncora-open --release && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-inno-installer.ps1",
     "lint": "eslint .",
     "preview": "vite preview",
     "tauri:dev": "tauri dev",

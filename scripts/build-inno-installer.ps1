@@ -36,7 +36,7 @@ if (-not (Test-Path -LiteralPath $InnoScript -PathType Leaf)) {
 
 foreach ($Required in @($AppExe, $HelperExe, $BackendExe)) {
   if (-not (Test-Path -LiteralPath $Required -PathType Leaf)) {
-    throw "Arquivo de release ausente: $Required. Rode primeiro: npm run build:release; cargo build --manifest-path src-tauri/Cargo.toml --release"
+    throw "Arquivo de release ausente: $Required. Rode primeiro: npm run inno:build"
   }
 }
 
