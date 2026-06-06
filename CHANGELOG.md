@@ -1,0 +1,43 @@
+# Changelog
+
+Todas as mudanças notáveis neste projeto são documentadas aqui. O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
+
+## [0.1.0-beta] - 2026-06-06
+
+### Added
+- **Instalador único Tauri (`syncora.exe`)** que substitui o instalador Inno Setup. O mesmo binário é o assistente de instalação e o app principal; detecta primeira execução via arquivo `.installed` em `%LOCALAPPDATA%\app.syncora.desktop\`.
+- **Assistente de instalação em 4 passos**: Termos de Uso (aceite obrigatório), Preparar (caminho + opções), Instalar (progresso com etapa e percentual) e Concluir (abre o app).
+- **Validação de caminho** antes de instalar (comprimento, caracteres inválidos, pastas do sistema, permissão de escrita, existência do pai).
+- **Instalação por usuário** (HKCU + `%LOCALAPPDATA%\Programs\Syncora` por padrão) sem prompt de UAC, com atalhos na Área de Trabalho e Menu Iniciar.
+- **Desinstalação robusta** via `syncora.exe --uninstall` (registrada no Adicionar/Remover Programas): spawna PowerShell oculto que mata processos em execução e remove pasta de instalação, marcador `.installed`, chaves de registro e atalhos.
+- **Verificador de atualizações** integrado que consulta `api.github.com/repos/CRaulD/Syncora/releases/latest` no startup (com delay de 1.5s) e em verificação manual. Cache de 24h para respeitar o rate limit do GitHub (60 req/h).
+- **Toast amber não-bloqueante** no canto inferior direito quando há atualização disponível, com botão "Baixar" que abre a release page no navegador.
+- **Seção "Atualizações"** na aba Configuração com versão atual, timestamp da última checagem e botão "Verificar agora".
+- **Internacionalização** (i18n) completa em **pt-BR**, **en** e **es** para instalador, assistente, app principal e mensagens de atualização.
+- **Ícones do app** agora incluídos como recursos Tauri (`icons/` em `bundle.resources`), copiados para a pasta de instalação e usados em atalhos e registro.
+- **Helper de contexto do Explorer** (`syncora-open.exe`) empacotado e instalado, com menu em 3 idiomas (PT/EN/ES) instalado por padrão no registro HKCU.
+
+### Changed
+- **Identificador interno** do Cargo package renomeado de `app` para `syncora`, e o binário de `app.exe` para `syncora.exe` para refletir o `productName`.
+- **Build script** atualizado: `npm run build:syncora` agora usa `tauri build --no-bundle` para gerar o `.exe` único com frontend e backend embarcados.
+- **Capability `shell:default`** adicionada para permitir abertura de URLs externas (release page do GitHub).
+- **`tauri.conf.json`**: `windows: []` (as janelas são criadas em código conforme o estado de instalação) e `icons/` em `bundle.resources`.
+
+### Removed
+- Script `scripts/generate-nsis-assets.mjs` (gerador de bitmaps NSIS).
+- `src-tauri/installer/syncora-inno.iss` (script Inno Setup).
+- `src-tauri/installer/syncora-installer.nsi` (template NSIS).
+- `src-tauri/installer/nsis-header.bmp` e `nsis-sidebar.bmp` (bitmaps NSIS).
+- `docs/installer-tauri-plan.md` (plano original, superado pela implementação).
+- Comando `npm run inno:build` (substituído por `build:syncora`).
+
+### Fixed
+- **File lock no build**: `cargo` falhava com `os error 32` quando `syncora.exe` ainda estava rodando; agora o build embede corretamente os recursos.
+- **Desinstalação incompleta**: o instalador antigo deixava o marcador `.installed` e a pasta de instalação após `fs::remove_dir_all` falhar por arquivos em uso; nova versão mata os processos antes de remover.
+- **Ícones nos atalhos**: ícones não eram copiados para a pasta de instalação porque não estavam em `bundle.resources`; agora são incluídos e ficam disponíveis para `IconLocation` do `.lnk` e `DisplayIcon` do registro.
+
+### Security
+- **Desinstalador verificado**: usa spawn de PowerShell com `CREATE_NO_WINDOW` (sem janela visível) e comandos `-NoProfile -ExecutionPolicy Bypass`.
+- **Validação de caminho** contra list-prefix de pastas protegidas (`C:\Windows`, `C:\Program Files`, `C:\ProgramData`, etc.).
+
+[0.1.0-beta]: https://github.com/CRaulD/Syncora/releases/tag/v0.1.0-beta
