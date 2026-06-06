@@ -4,17 +4,17 @@ Todas as mudanças notáveis neste projeto são documentadas aqui. O formato seg
 
 > 🌐 **Idioma:** [English](CHANGELOG.md) · **Português (BR)**
 
-## [0.1.2-beta] - 2026-06-06
+## [0.1.1-beta] - 2026-06-06
 
-### Corrigido
+### Corrigido (follow-up: desinstalação + estado parcial)
 - **Desinstalação agora sempre limpa o registro**, mesmo se a pasta de instalação sumiu. Antes, se a pasta de instalação era removida (ex.: por antivírus ou manualmente), as entradas em `HKCU\Software\Syncora` e `HKCU\...\Uninstall\Syncora` ficavam órfãs, fazendo o app aparecer como instalado em Configurações → Aplicativos sem como remover (o `UninstallString` apontava pra um `.exe` que não existia). `run_uninstall` agora sempre remove as chaves do registro, o marcador `.installed`, a pasta `runtime`, os atalhos da Área de Trabalho e Menu Iniciar, e a integração com o Explorer — só a remoção da pasta de instalação em si é condicional ao valor no registro.
 - **`is_installed()` agora verifica que a pasta de instalação realmente existe**. Antes, a função retornava `true` sempre que o registro tinha uma entrada `InstallPath`, mesmo se o caminho tivesse sumido — fazendo o app principal abrir com backend quebrado em vez do wizard. Agora o wizard abre com a opção Reparar quando a instalação está nesse estado parcial.
 
-### Adicionado
+### Adicionado (follow-up: opção de reparo no wizard)
 - **Opção "Reparar instalação" no assistente**. Quando o registro tem um `InstallPath` mas a pasta sumiu, o wizard mostra uma tela dedicada com o caminho registrado e dois botões: **Reparar** (reinstalar no mesmo caminho, baixar todas as dependências de novo) e **Instalação nova** (seguir o fluxo normal de instalação do zero). A tela de Reparo é traduzida em pt-BR, en e es.
 - **Comando Tauri `get_install_state`** que retorna `fresh`, `partial { path }` ou `complete`, para o wizard detectar o estado parcial e oferecer a ação certa.
 
-## [0.1.1-beta] - 2026-06-06
+
 
 ### Corrigido
 - **Bug crítico na `v0.1.0-beta`**: o instalador nunca copiava `syncora-backend.exe`, `syncora-open.exe` nem os ícones para a pasta de instalação. O assistente terminava com sucesso, mas na primeira execução o app mostrava "Backend offline" porque o backend, helper e ícones nunca tinham sido instalados. A nova build embarca tudo dentro do `syncora.exe` via `include_bytes!` e grava na pasta de instalação na hora de instalar, então eles estão sempre lá.

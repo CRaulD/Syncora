@@ -4,17 +4,17 @@ All notable changes to this project are documented here. The format follows [Kee
 
 > 🌐 **Language:** **English** · [Português (BR)](CHANGELOG.pt-BR.md)
 
-## [0.1.2-beta] - 2026-06-06
+## [0.1.1-beta] - 2026-06-06
 
-### Fixed
+### Fixed (follow-up: uninstall + partial install state)
 - **Uninstall now always cleans the registry**, even if the install folder is gone. Previously, if the install dir was removed (e.g. by antivirus or manually), the registry entries in `HKCU\Software\Syncora` and `HKCU\...\Uninstall\Syncora` were left orphaned, making the app appear installed in Windows Settings → Apps with no way to remove it (the `UninstallString` pointed to a non-existent `.exe`). `run_uninstall` now always removes the registry keys, the `.installed` marker, the runtime dir, the Desktop and Start Menu shortcuts, and the explorer integration — only the install dir removal is conditional on the registry value being present.
 - **`is_installed()` now verifies the install folder actually exists**. Previously, the function returned `true` whenever the registry had an `InstallPath` entry, even if that path was gone — causing the main app to launch with a broken backend instead of the wizard. Now the wizard opens with a Repair option when the install is in this partial state.
 
-### Added
+### Added (follow-up: repair option in wizard)
 - **"Repair installation" option in the setup wizard**. When the registry has an `InstallPath` but the folder is missing, the wizard now shows a dedicated screen with the registered path and two buttons: **Reparar** (re-install to the same path, re-download all deps) and **Instalação nova** (proceed with the normal fresh-install flow). The Repair screen is translated in pt-BR, en, and es.
 - **`get_install_state` Tauri command** that returns `fresh`, `partial { path }`, or `complete`, so the wizard can detect the partial state and offer the right action.
 
-## [0.1.1-beta] - 2026-06-06
+
 
 ### Fixed
 - **Critical bug in `v0.1.0-beta`**: the installer never copied `syncora-backend.exe`, `syncora-open.exe`, or the icons to the install folder. The setup wizard finished successfully, but on first launch the app reported "Backend offline" because the backend, helper, and icons were never installed. The new build embeds them inside `syncora.exe` via `include_bytes!` and writes them to the install folder at install time, so they are guaranteed to be present.
