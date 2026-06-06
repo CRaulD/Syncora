@@ -553,10 +553,36 @@ fn current_helper_exe(app_exe: &Path) -> Result<PathBuf, String> {
         }
     }
 
+    if let Some(install_dir) = installed_path_from_registry() {
+        let candidate = install_dir.join("syncora-open.exe");
+        if candidate.is_file() {
+            return Ok(candidate);
+        }
+    }
+
     Err(format!(
         "syncora-open.exe nao encontrado ao lado do app: {}",
         helper.display()
     ))
+}
+
+fn installed_path_from_registry() -> Option<PathBuf> {
+    #[cfg(target_os = "windows")]
+    {
+        use winreg::enums::HKEY_CURRENT_USER;
+        use winreg::RegKey;
+        let hklm = RegKey::predef(HKEY_CURRENT_USER);
+        if let Ok(key) = hklm.open_subkey(r"Software\Syncora") {
+            if let Ok(val) = key.get_value::<String, _>("InstallPath") {
+                let p = PathBuf::from(val);
+                if p.join("syncora-open.exe").is_file() {
+                    return Some(p);
+                }
+            }
+        }
+    }
+    #[allow(unreachable_code)]
+    None
 }
 
 fn quoted_path(path: &Path) -> String {

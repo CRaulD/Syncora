@@ -334,7 +334,15 @@ fn run_install(app: &AppHandle, opts: &InstallOptions) -> Result<(), Box<dyn std
             None,
         );
         if let Err(e) = super::install_explorer_integration_native() {
-            log::warn!("Falha na integracao com Explorer: {e}");
+            let _ = InstallProgress::emit_keyed(
+                app,
+                &format!("Menu do Explorer: {e}"),
+                None,
+                98,
+                false,
+                None,
+                None,
+            );
         }
     }
 
